@@ -1,0 +1,69 @@
+@model ArtemisBankingPro.Application.ViewModels.Prestamos.SavePrestamoViewModel
+
+@{
+    ViewData["Title"] = "Configurar Préstamo";
+}
+
+<div class="container mt-4">
+    <h2>Configuración del Préstamo</h2>
+    <p>Complete los datos para el cliente seleccionado.</p>
+
+    <form asp-action="Create" method="post">
+        
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger">
+                @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+            </div>
+        }
+        
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger">
+                @TempData["Error"]
+            </div>
+        }
+
+        <input type="hidden" asp-for="ClienteId" />
+        <input type="hidden" asp-for="AdminId" />
+
+        <div class="mb-3">
+            <label asp-for="MontoAprobado" class="form-label">Monto a prestar</label>
+            <input asp-for="MontoAprobado" type="number" step="0.01" class="form-control" />
+            <span asp-validation-for="MontoAprobado" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="PlazoMeses" class="form-label">Plazo del préstamo</label>
+            <select asp-for="PlazoMeses" class="form-select">
+                <option value="">Seleccione el plazo</option>
+                <option value="6">6 meses</option>
+                <option value="12">12 meses</option>
+                <option value="18">18 meses</option>
+                <option value="24">24 meses</option>
+                <option value="30">30 meses</option>
+                <option value="36">36 meses</option>
+                <option value="42">42 meses</option>
+                <option value="48">48 meses</option>
+                <option value="54">54 meses</option>
+                <option value="60">60 meses</option>
+            </select>
+            <span asp-validation-for="PlazoMeses" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="TasaInteresAnual" class="form-label">Tasa de interés anual (%)</label>
+            <input asp-for="TasaInteresAnual" type="number" step="0.01" class="form-control" />
+            <span asp-validation-for="TasaInteresAnual" class="text-danger"></span>
+        </div>
+
+        <div class="mt-4">
+            <a asp-action="SelectClient" class="btn btn-secondary">Volver atrás</a>
+            <button type="submit" class="btn btn-primary">Asignar préstamo</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

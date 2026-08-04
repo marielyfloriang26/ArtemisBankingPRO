@@ -21,6 +21,7 @@ public class ApplicationDbContext : IdentityDbContext<Usuario, IdentityRole<int>
     public DbSet<ComercioUsuario> ComercioUsuarios { get; set; }
     public DbSet<Beneficiario> Beneficiarios { get; set; }
     public DbSet<Transaccion> Transacciones { get; set; }
+    public DbSet<ProductoTarjetaCredito> ProductosTarjetaCredito { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

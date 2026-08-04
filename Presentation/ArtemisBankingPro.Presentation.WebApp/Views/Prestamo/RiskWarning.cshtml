@@ -1,0 +1,29 @@
+@model ArtemisBankingPro.Application.ViewModels.Prestamos.SavePrestamoViewModel
+
+@{
+    ViewData["Title"] = "Advertencia de Riesgo";
+}
+
+<div class="container mt-4">
+    <div class="card border-warning">
+        <div class="card-header bg-warning text-dark">
+            <h4 class="mb-0">Evaluación de Riesgo</h4>
+        </div>
+        <div class="card-body">
+            <h5 class="card-title text-danger">@ViewBag.Warning</h5>
+            
+            <p class="mt-4">¿Desea continuar de todos modos con la asignación del préstamo?</p>
+
+            <form asp-action="ConfirmRiskWarning" method="post" class="d-inline">
+                <input type="hidden" asp-for="ClienteId" />
+                <input type="hidden" asp-for="MontoAprobado" />
+                <input type="hidden" asp-for="PlazoMeses" />
+                <input type="hidden" asp-for="TasaInteresAnual" />
+                <input type="hidden" asp-for="AdminId" />
+                <button type="submit" class="btn btn-danger">Confirmar asignación</button>
+            </form>
+            
+            <a asp-action="Index" class="btn btn-secondary ms-2">Cancelar</a>
+        </div>
+    </div>
+</div>

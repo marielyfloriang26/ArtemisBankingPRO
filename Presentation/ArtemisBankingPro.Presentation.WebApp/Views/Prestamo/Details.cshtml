@@ -1,0 +1,94 @@
+@model ArtemisBankingPro.Application.ViewModels.Prestamos.PrestamoViewModel
+
+@{
+    ViewData["Title"] = "Detalles del Préstamo";
+}
+
+<div class="container mt-4">
+    <h2>Detalles del Préstamo - @Model.NumeroPrestamo</h2>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>Información General</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <p><strong>Cliente:</strong> @Model.NombreCliente</p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Monto Aprobado:</strong> @Model.MontoAprobado.ToString("C")</p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Tasa Interés Anual:</strong> @Model.TasaInteresAnual %</p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Plazo:</strong> @Model.PlazoMeses meses</p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Monto Pendiente:</strong> @Model.MontoPendiente.ToString("C")</p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Estado:</strong> 
+                        <span class="badge @(Model.Estado == "Activo" ? "bg-success" : "bg-secondary")">@Model.Estado</span>
+                    </p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Fecha de Creación:</strong> @Model.FechaCreacion.ToString("dd/MM/yyyy")</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h4>Tabla de Amortización</h4>
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped text-center">
+            <thead class="table-dark">
+                <tr>
+                    <th>No. Cuota</th>
+                    <th>Fecha de Vencimiento</th>
+                    <th>Capital</th>
+                    <th>Interés</th>
+                    <th>Valor Cuota</th>
+                    <th>Saldo Pendiente</th>
+                    <th>Estado de Pago</th>
+                    <th>Atraso</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var cuota in Model.Cuotas.OrderBy(c => c.NumeroCuota))
+                {
+                    <tr>
+                        <td>@cuota.NumeroCuota</td>
+                        <td>@cuota.FechaVencimiento.ToString("dd/MM/yyyy")</td>
+                        <td>@cuota.MontoCapital.ToString("C")</td>
+                        <td>@cuota.MontoInteres.ToString("C")</td>
+                        <td>@cuota.ValorCuota.ToString("C")</td>
+                        <td>@cuota.SaldoPendiente.ToString("C")</td>
+                        <td>
+                            <span class="badge @(cuota.EstadoPago == "Pagada" ? "bg-success" : "bg-warning text-dark")">@cuota.EstadoPago</span>
+                        </td>
+                        <td>
+                            @if (cuota.TieneAtraso)
+                            {
+                                <span class="badge bg-danger">Atrasada</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">-</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="mt-4">
+        <a asp-action="Index" class="btn btn-secondary">Volver atrás</a>
+        @if (Model.Estado == "Activo")
+        {
+            <a asp-action="EditRate" asp-route-id="@Model.Id" class="btn btn-warning">Editar Tasa</a>
+        }
+    </div>
+</div>

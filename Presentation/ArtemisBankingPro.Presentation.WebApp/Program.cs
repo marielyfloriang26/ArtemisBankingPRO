@@ -32,6 +32,8 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 builder.Services.AddApplicationLayer();
 
+builder.Services.AddHostedService<ArtemisBankingPro.Presentation.WebApp.BackgroundServices.CuotasAtrasadasBackgroundService>();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())

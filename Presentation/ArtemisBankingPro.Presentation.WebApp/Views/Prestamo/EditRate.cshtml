@@ -1,0 +1,51 @@
+@model ArtemisBankingPro.Application.ViewModels.Prestamos.EditTasaPrestamoViewModel
+
+@{
+    ViewData["Title"] = "Editar Tasa de Interés";
+}
+
+<div class="container mt-4">
+    <h2>Editar Tasa de Interés del Préstamo</h2>
+    
+    <div class="card">
+        <div class="card-header">
+            <h4>Modificar Tasa</h4>
+        </div>
+        <div class="card-body">
+            
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger">
+                    @TempData["Error"]
+                </div>
+            }
+
+            <form asp-action="EditRate" method="post">
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger">
+                        @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+                    </div>
+                }
+
+                <input type="hidden" asp-for="PrestamoId" />
+
+                <div class="mb-3">
+                    <label asp-for="NuevaTasaInteresAnual" class="form-label">Nueva Tasa de Interés Anual (%)</label>
+                    <input asp-for="NuevaTasaInteresAnual" type="number" step="0.01" class="form-control" />
+                    <span asp-validation-for="NuevaTasaInteresAnual" class="text-danger"></span>
+                    <small class="form-text text-muted">Nota: Solo se recalcularán las cuotas futuras pendientes.</small>
+                </div>
+
+                <div class="mt-4">
+                    <a asp-action="Index" class="btn btn-secondary">Volver atrás</a>
+                    <button type="submit" class="btn btn-primary">Modificar tasa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
