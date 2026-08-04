@@ -1,0 +1,38 @@
+@model ArtemisBankingPro.Application.ViewModels.Transacciones.PagoBeneficiarioConfirmViewModel
+
+@{
+    ViewData["Title"] = "Confirmar transacción";
+}
+
+<div class="container mt-4">
+    <div class="card border-primary">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Confirmar transacción a beneficiario</h4>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-4">Titular de la cuenta beneficiaria</dt>
+                <dd class="col-sm-8">@Model.TitularBeneficiario</dd>
+
+                <dt class="col-sm-4">Número de cuenta beneficiaria</dt>
+                <dd class="col-sm-8">@Model.NumeroCuentaBeneficiario</dd>
+
+                <dt class="col-sm-4">Monto a transferir</dt>
+                <dd class="col-sm-8">RD$@Model.Monto.ToString("N2")</dd>
+            </dl>
+
+            <p class="fw-bold">¿Está seguro de que desea realizar esta transacción?</p>
+
+            <form asp-action="BeneficiarioConfirm" method="post" class="d-inline">
+                <input type="hidden" asp-for="BeneficiarioId" />
+                <input type="hidden" asp-for="CuentaOrigenId" />
+                <input type="hidden" asp-for="NumeroCuentaOrigen" />
+                <input type="hidden" asp-for="Monto" />
+                <input type="hidden" asp-for="TitularBeneficiario" />
+                <input type="hidden" asp-for="NumeroCuentaBeneficiario" />
+                <button type="submit" class="btn btn-primary">Confirmar</button>
+            </form>
+            <a asp-controller="Home" asp-action="Cliente" class="btn btn-secondary ms-2">Cancelar</a>
+        </div>
+    </div>
+</div>

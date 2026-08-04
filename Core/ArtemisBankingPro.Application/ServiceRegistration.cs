@@ -12,6 +12,7 @@ public static class ServiceRegistration
         services.AddTransient<ArtemisBankingPro.Application.Interfaces.Services.IPrestamoService, ArtemisBankingPro.Application.Services.PrestamoService>();
         services.AddTransient<ArtemisBankingPro.Application.Interfaces.Services.ICreditCardService, ArtemisBankingPro.Application.Services.CreditCardService>();
         services.AddTransient<ArtemisBankingPro.Application.Interfaces.Services.IBeneficiarioService, ArtemisBankingPro.Application.Services.BeneficiarioService>();
+        services.AddTransient<ArtemisBankingPro.Application.Interfaces.Services.ITransaccionClienteService, ArtemisBankingPro.Application.Services.TransaccionClienteService>();
         #endregion
     }
 }

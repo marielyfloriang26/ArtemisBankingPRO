@@ -1,0 +1,14 @@
+@{
+    ViewData["Title"] = "Acceso denegado";
+}
+
+<div class="container mt-4">
+    <div class="alert alert-danger">
+        No posee permisos para acceder a esta sección.
+    </div>
+
+    @if (User.IsInRole("Cliente"))
+    {
+        <a asp-controller="Home" asp-action="Cliente" class="btn btn-primary">Volver al Home</a>
+    }
+</div>

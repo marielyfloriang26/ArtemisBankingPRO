@@ -1,0 +1,22 @@
+@{
+    ViewData["Title"] = "Transacciones";
+}
+
+<div class="container-fluid py-4">
+    <h1 class="h3 mb-4">Transacciones</h1>
+
+    <div class="row g-3">
+        <div class="col-md-3">
+            <a asp-action="Express" class="btn btn-outline-primary w-100 py-3">Transacción Express</a>
+        </div>
+        <div class="col-md-3">
+            <a asp-action="Tarjeta" class="btn btn-outline-primary w-100 py-3">Pago a tarjeta de crédito</a>
+        </div>
+        <div class="col-md-3">
+            <a asp-action="Prestamo" class="btn btn-outline-primary w-100 py-3">Pago a préstamo</a>
+        </div>
+        <div class="col-md-3">
+            <a asp-action="Beneficiario" class="btn btn-outline-primary w-100 py-3">Transacción a beneficiarios</a>
+        </div>
+    </div>
+</div>

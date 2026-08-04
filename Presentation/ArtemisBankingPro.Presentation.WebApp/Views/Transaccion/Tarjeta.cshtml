@@ -1,0 +1,62 @@
+@model ArtemisBankingPro.Application.ViewModels.Transacciones.PagoTarjetaFormViewModel
+
+@{
+    ViewData["Title"] = "Pago a tarjeta de crédito";
+}
+
+<div class="container mt-4">
+    <h2>Pago a tarjeta de crédito</h2>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+    <form asp-action="Tarjeta" method="post">
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger">
+                @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+            </div>
+        }
+
+        <div class="mb-3">
+            <label asp-for="TarjetaId" class="form-label">Tarjeta de crédito destino</label>
+            <select asp-for="TarjetaId" class="form-select">
+                <option value="">Seleccione una tarjeta</option>
+                @foreach (var tarjeta in Model.Tarjetas)
+                {
+                    <option value="@tarjeta.Id">**** **** **** @tarjeta.UltimosDigitos — Deuda: RD$@tarjeta.MontoAdeudado.ToString("N2")</option>
+                }
+            </select>
+            <span asp-validation-for="TarjetaId" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="CuentaOrigenId" class="form-label">Cuenta de origen</label>
+            <select asp-for="CuentaOrigenId" class="form-select">
+                <option value="">Seleccione una cuenta</option>
+                @foreach (var cuenta in Model.CuentasOrigen)
+                {
+                    <option value="@cuenta.Id">@cuenta.NumeroCuenta — RD$@cuenta.Balance.ToString("N2")</option>
+                }
+            </select>
+            <span asp-validation-for="CuentaOrigenId" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Monto" class="form-label">Monto a pagar</label>
+            <input asp-for="Monto" type="number" step="0.01" class="form-control" />
+            <span asp-validation-for="Monto" class="text-danger"></span>
+        </div>
+
+        <div class="mt-4">
+            <a asp-controller="Home" asp-action="Cliente" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Siguiente</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

@@ -1,0 +1,62 @@
+@model ArtemisBankingPro.Application.ViewModels.Transacciones.PagoPrestamoFormViewModel
+
+@{
+    ViewData["Title"] = "Pago a préstamo";
+}
+
+<div class="container mt-4">
+    <h2>Pago a préstamo</h2>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+    <form asp-action="Prestamo" method="post">
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger">
+                @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+            </div>
+        }
+
+        <div class="mb-3">
+            <label asp-for="PrestamoId" class="form-label">Préstamo a pagar</label>
+            <select asp-for="PrestamoId" class="form-select">
+                <option value="">Seleccione un préstamo</option>
+                @foreach (var prestamo in Model.Prestamos)
+                {
+                    <option value="@prestamo.Id">@prestamo.NumeroPrestamo — Pendiente: RD$@prestamo.MontoPendiente.ToString("N2")</option>
+                }
+            </select>
+            <span asp-validation-for="PrestamoId" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="CuentaOrigenId" class="form-label">Cuenta de origen</label>
+            <select asp-for="CuentaOrigenId" class="form-select">
+                <option value="">Seleccione una cuenta</option>
+                @foreach (var cuenta in Model.CuentasOrigen)
+                {
+                    <option value="@cuenta.Id">@cuenta.NumeroCuenta — RD$@cuenta.Balance.ToString("N2")</option>
+                }
+            </select>
+            <span asp-validation-for="CuentaOrigenId" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Monto" class="form-label">Monto a pagar</label>
+            <input asp-for="Monto" type="number" step="0.01" class="form-control" />
+            <span asp-validation-for="Monto" class="text-danger"></span>
+        </div>
+
+        <div class="mt-4">
+            <a asp-controller="Home" asp-action="Cliente" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Siguiente</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

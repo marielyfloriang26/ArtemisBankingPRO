@@ -1,0 +1,49 @@
+@model ArtemisBankingPro.Application.ViewModels.Transacciones.PagoPrestamoConfirmViewModel
+
+@{
+    ViewData["Title"] = "Confirmar pago";
+}
+
+<div class="container mt-4">
+    <div class="card border-primary">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Confirmar pago a préstamo</h4>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-4">Titular de la cuenta origen</dt>
+                <dd class="col-sm-8">@Model.TitularCuentaOrigen</dd>
+
+                <dt class="col-sm-4">Número de cuenta origen</dt>
+                <dd class="col-sm-8">@Model.NumeroCuentaOrigen</dd>
+
+                <dt class="col-sm-4">Titular del préstamo</dt>
+                <dd class="col-sm-8">@Model.TitularPrestamo</dd>
+
+                <dt class="col-sm-4">Número del préstamo</dt>
+                <dd class="col-sm-8">@Model.NumeroPrestamo</dd>
+
+                <dt class="col-sm-4">Monto ingresado</dt>
+                <dd class="col-sm-8">RD$@Model.MontoIngresado.ToString("N2")</dd>
+
+                <dt class="col-sm-4">Monto efectivo a pagar</dt>
+                <dd class="col-sm-8">RD$@Model.MontoEfectivo.ToString("N2")</dd>
+            </dl>
+
+            <p class="fw-bold">¿Está seguro que desea realizar este pago?</p>
+
+            <form asp-action="PrestamoConfirm" method="post" class="d-inline">
+                <input type="hidden" asp-for="PrestamoId" />
+                <input type="hidden" asp-for="CuentaOrigenId" />
+                <input type="hidden" asp-for="MontoIngresado" />
+                <input type="hidden" asp-for="MontoEfectivo" />
+                <input type="hidden" asp-for="TitularCuentaOrigen" />
+                <input type="hidden" asp-for="NumeroCuentaOrigen" />
+                <input type="hidden" asp-for="TitularPrestamo" />
+                <input type="hidden" asp-for="NumeroPrestamo" />
+                <button type="submit" class="btn btn-primary">Confirmar</button>
+            </form>
+            <a asp-controller="Home" asp-action="Cliente" class="btn btn-secondary ms-2">Cancelar</a>
+        </div>
+    </div>
+</div>
