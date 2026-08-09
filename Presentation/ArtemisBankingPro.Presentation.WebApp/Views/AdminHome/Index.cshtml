@@ -1,0 +1,17 @@
+@{
+    ViewData["Title"] = "Home Administrador";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container py-5">
+    <div class="alert alert-success shadow-sm p-4">
+        <h2 class="fw-bold">Bienvenido al Panel de Administrador</h2>
+        <p class="mb-0">Has iniciado sesión correctamente.</p>
+    </div>
+    
+    <form asp-controller="Account" asp-action="Logout" method="post" class="mt-3">
+        <button type="submit" class="btn btn-danger px-4">
+            <i class="fa-solid fa-right-from-bracket me-2"></i>Cerrar Sesión
+        </button>
+    </form>
+</div>
