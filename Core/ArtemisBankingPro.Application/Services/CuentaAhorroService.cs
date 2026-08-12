@@ -1,0 +1,101 @@
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using AutoMapper;
+using ArtemisBankingPro.Application.Interfaces.Services;
+using ArtemisBankingPro.Application.ViewModels.Cliente;
+using ArtemisBankingPro.Domain.Entities;
+using ArtemisBankingPro.Application.Interfaces.Repositories;
+using Microsoft.Extensions.Logging;
+
+namespace ArtemisBankingPro.Application.Services
+{
+    public class CuentaAhorroService : ICuentaAhorroService
+    {
+        private readonly IGenericRepository<CuentaAhorro> _cuentaRepository;
+        private readonly IGenericRepository<Transaccion> _transaccionRepository;
+        private readonly IMapper _mapper;
+        private readonly ILogger<CuentaAhorroService> _logger;
+        public CuentaAhorroService(
+            IGenericRepository<CuentaAhorro> cuentaRepository,
+            IGenericRepository<Transaccion> transaccionRepository,
+            IMapper mapper,
+            ILogger<CuentaAhorroService> logger)
+        {
+            _cuentaRepository = cuentaRepository;
+            _transaccionRepository = transaccionRepository;
+            _mapper = mapper;
+            _logger = logger;
+        }
+
+        public async Task<List<CuentaAhorroViewModel>> GetActiveCuentasByClientIdAsync(int clienteId)
+        {
+            var cuentas = await _cuentaRepository.GetAllAsync();
+            var cuentasActivas = cuentas.Where(c => c.ClienteId == clienteId && c.Estado == "Activa").ToList();
+            
+            return _mapper.Map<List<CuentaAhorroViewModel>>(cuentasActivas);
+        }
+
+        public async Task<(bool Success, string ErrorMessage)> RealizarTransferenciaAsync(TransferenciaViewModel model, int clienteId)
+        {
+            var cuentas = await _cuentaRepository.GetAllAsync();
+            
+            // 1. Obtener y validar cuenta origen
+            var cuentaOrigen = cuentas.FirstOrDefault(c => c.Id == model.CuentaOrigenId && c.ClienteId == clienteId && c.Estado == "Activa");
+            if (cuentaOrigen == null) 
+                return (false, "La cuenta de origen no es válida.");
+            if (cuentaOrigen.Balance < model.Monto) 
+                return (false, "Balance insuficiente en la cuenta de origen.");
+            // 2. Obtener y validar cuenta destino por su número
+            var cuentaDestino = cuentas.FirstOrDefault(c => c.NumeroCuenta == model.NumeroCuentaDestino && c.Estado == "Activa");
+            if (cuentaDestino == null) 
+                return (false, "La cuenta de destino no existe o no está activa.");
+                
+            if (cuentaOrigen.Id == cuentaDestino.Id) 
+                return (false, "No puede transferir a su misma cuenta de origen.");
+            // 3. Actualizar balances
+            cuentaOrigen.Balance -= model.Monto;
+            cuentaDestino.Balance += model.Monto;
+            // 4. Crear Transacción Débito (Origen)
+            var transaccionOrigen = new Transaccion
+            {
+                CuentaOrigenId = cuentaOrigen.Id,
+                CuentaDestinoId = cuentaDestino.Id,
+                Monto = model.Monto,
+                TipoTransaccion = "DÉBITO",
+                Origen = "TRANSFERENCIA",
+                Beneficiario = $"nº cuenta destino {cuentaDestino.NumeroCuenta}",
+                Estado = "APROBADA",
+                UsuarioResponsableId = clienteId,
+                FechaTransaccion = DateTime.UtcNow
+            };
+            // 5. Crear Transacción Crédito (Destino)
+            var transaccionDestino = new Transaccion
+            {
+                CuentaOrigenId = cuentaOrigen.Id,
+                CuentaDestinoId = cuentaDestino.Id,
+                Monto = model.Monto,
+                TipoTransaccion = "CRÉDITO",
+                Origen = $"nº cuenta origen {cuentaOrigen.NumeroCuenta}",
+                Beneficiario = "TRANSFERENCIA",
+                Estado = "APROBADA",
+                UsuarioResponsableId = clienteId,
+                FechaTransaccion = DateTime.UtcNow
+            };
+            try
+            {
+                await _cuentaRepository.UpdateAsync(cuentaOrigen, cuentaOrigen.Id);
+                await _cuentaRepository.UpdateAsync(cuentaDestino, cuentaDestino.Id);
+                await _transaccionRepository.AddAsync(transaccionOrigen);
+                await _transaccionRepository.AddAsync(transaccionDestino);
+                _logger.LogInformation("Transferencia exitosa. Origen: {Origen}, Destino: {Destino}, Monto: {Monto}", cuentaOrigen.NumeroCuenta, cuentaDestino.NumeroCuenta, model.Monto);
+                return (true, string.Empty);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error en transferencia desde la cuenta {Origen}", cuentaOrigen.NumeroCuenta);
+                return (false, "Error al procesar la transferencia.");
+            }
+        }
+    }
+}

@@ -16,6 +16,7 @@ public static class ServiceRegistration
 
         #region Repositories
         // TODO: Register repositories here
+        services.AddTransient(typeof(Application.Interfaces.Repositories.IGenericRepository<>), typeof(Repositories.GenericRepository<>));
         #endregion
     }
 }
