@@ -97,5 +97,78 @@ namespace ArtemisBankingPro.Application.Services
                 return (false, "Error al procesar la transferencia.");
             }
         }
+
+                public async Task<(bool Success, string ErrorMessage)> RealizarDepositoAsync(ViewModels.Cajero.DepositoViewModel model, int cajeroId)
+        {
+            var cuentas = await _cuentaRepository.GetAllAsync();
+            var cuenta = cuentas.FirstOrDefault(c => c.NumeroCuenta == model.NumeroCuenta && c.Estado == "Activa");
+
+            if (cuenta == null)
+                return (false, "La cuenta especificada no existe o no está activa.");
+
+            // Aumentar balance
+            cuenta.Balance += model.Monto;
+
+            // Registrar Transacción (Crédito a la cuenta)
+            var transaccion = new Transaccion
+            {
+                CuentaDestinoId = cuenta.Id,
+                Monto = model.Monto,
+                TipoTransaccion = "CRÉDITO",
+                Origen = "DEPÓSITO",
+                Beneficiario = "DEPÓSITO",
+                Estado = "APROBADA",
+                UsuarioResponsableId = cajeroId, // ID del Cajero que hace la operación
+                FechaTransaccion = DateTime.UtcNow
+            };
+
+            try
+            {
+                await _cuentaRepository.UpdateAsync(cuenta, cuenta.Id);
+                await _transaccionRepository.AddAsync(transaccion);
+                
+                _logger.LogInformation("Depósito exitoso. Cuenta: {Cuenta}, Monto: {Monto}, Cajero: {Cajero}", cuenta.NumeroCuenta, model.Monto, cajeroId);
+                return (true, string.Empty);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al realizar depósito a la cuenta {Cuenta}", cuenta.NumeroCuenta);
+                return (false, "Error al procesar el depósito.");
+            }
+        }
+
+        public async Task<(bool Success, string ErrorMessage)> RealizarRetiroAsync(ViewModels.Cajero.RetiroViewModel model, int cajeroId)
+{
+    var cuentas = await _cuentaRepository.GetAllAsync();
+    var cuenta = cuentas.FirstOrDefault(c => c.NumeroCuenta == model.NumeroCuenta && c.Estado == "Activa");
+
+    if (cuenta == null) return (false, "La cuenta no existe o no está activa.");
+    if (cuenta.Balance < model.Monto) return (false, "La cuenta no tiene balance suficiente para el retiro.");
+
+    cuenta.Balance -= model.Monto;
+
+    var transaccion = new Transaccion
+    {
+        CuentaOrigenId = cuenta.Id,
+        Monto = model.Monto,
+        TipoTransaccion = "DÉBITO",
+        Origen = "RETIRO",
+        Beneficiario = "RETIRO",
+        Estado = "APROBADA",
+        UsuarioResponsableId = cajeroId,
+        FechaTransaccion = DateTime.UtcNow
+    };
+
+    try
+    {
+        await _cuentaRepository.UpdateAsync(cuenta, cuenta.Id);
+        await _transaccionRepository.AddAsync(transaccion);
+        return (true, string.Empty);
+    }
+    catch
+    {
+        return (false, "Error al procesar el retiro.");
+    }
+}
     }
 }

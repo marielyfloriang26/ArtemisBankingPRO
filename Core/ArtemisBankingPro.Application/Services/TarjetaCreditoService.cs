@@ -138,5 +138,47 @@ namespace ArtemisBankingPro.Application.Services
             
             return new string('*', numeroTarjeta.Length - 4) + numeroTarjeta.Substring(numeroTarjeta.Length - 4);
         }
+
+        public async Task<(bool Success, string ErrorMessage)> RealizarPagoAsync(ViewModels.Cajero.PagoTarjetaViewModel model, int cajeroId)
+{
+    var tarjetas = await _tarjetaRepository.GetAllAsync();
+    var tarjeta = tarjetas.FirstOrDefault(t => t.NumeroTarjeta == model.NumeroTarjeta && t.Estado == "Activa");
+
+    if (tarjeta == null) return (false, "La tarjeta no existe o no está activa.");
+
+    tarjeta.MontoAdeudado -= model.Monto;
+
+    var consumo = new ConsumoTarjeta
+    {
+        TarjetaId = tarjeta.Id,
+        Monto = model.Monto,
+        Comercio = "PAGO_CAJA",
+        Estado = "APROBADO",
+        FechaConsumo = DateTime.UtcNow
+    };
+
+    var transaccion = new Transaccion
+    {
+        Monto = model.Monto,
+        TipoTransaccion = "CRÉDITO",
+        Origen = "PAGO",
+        Beneficiario = $"nº tarjeta {EnmascararTarjeta(tarjeta.NumeroTarjeta)}",
+        Estado = "APROBADA",
+        UsuarioResponsableId = cajeroId,
+        FechaTransaccion = DateTime.UtcNow
+    };
+
+    try
+    {
+        await _tarjetaRepository.UpdateAsync(tarjeta, tarjeta.Id);
+        await _consumoRepository.AddAsync(consumo);
+        await _transaccionRepository.AddAsync(transaccion);
+        return (true, string.Empty);
+    }
+    catch
+    {
+        return (false, "Error al procesar el pago.");
+    }
+}
     }
 }

@@ -11,5 +11,7 @@ namespace ArtemisBankingPro.Application.Interfaces.Services
 
         // Procesa la transaccion de avance de efectivo
         Task<(bool Success, string ErrorMessage)> RealizarAvanceEfectivoAsync(AvanceEfectivoViewModel model, int clienteId);
+
+        Task<(bool Success, string ErrorMessage)> RealizarPagoAsync(ViewModels.Cajero.PagoTarjetaViewModel model, int cajeroId);
     }
 }
