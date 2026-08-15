@@ -22,17 +22,69 @@
 <body class="min-vh-100 d-flex flex-column justify-content-between">
     
     <!-- Header / Barra de Navegación del Banco -->
-    <header class="bank-navbar shadow-sm py-3">
-        <div class="container d-flex align-items-center justify-content-between">
-            <span class="fs-4 fw-bold text-white tracking-wide">
+    <header class="bank-navbar shadow-sm">
+        <nav class="navbar navbar-expand-lg navbar-dark container py-3">
+            <a class="navbar-brand fs-4 fw-bold text-white tracking-wide" href="#">
                 <i class="fa-solid fa-building-columns text-info me-2"></i>Artemis Banking Pro
-            </span>
-            <span class="text-white-50 small d-none d-sm-inline">Banca Digital Segura</span>
-        </div>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
+                <ul class="navbar-nav">
+                    @if (User.Identity != null && User.Identity.IsAuthenticated)
+                    {
+                        @if (User.IsInRole("Administrador"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-white" asp-controller="AdminHome" asp-action="Index">
+                                    <i class="fa-solid fa-house me-1"></i> Home Administrador
+                                </a>
+                            </li>
+                        }
+                        else if (User.IsInRole("Cajero"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-white" asp-controller="CajeroHome" asp-action="Index">
+                                    <i class="fa-solid fa-house me-1"></i> Home Cajero
+                                </a>
+                            </li>
+                        }
+                        else if (User.IsInRole("Cliente"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-white" asp-controller="ClienteHome" asp-action="Index">
+                                    <i class="fa-solid fa-house me-1"></i> Home Cliente
+                                </a>
+                            </li>
+                        }
+                    }
+                </ul>
+
+                <div class="d-flex align-items-center">
+                    @if (User.Identity != null && User.Identity.IsAuthenticated)
+                    {
+                        <span class="text-white-50 me-3 small d-none d-md-inline">
+                            <i class="fa-solid fa-user me-1"></i>@User.Identity.Name
+                        </span>
+                        <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-outline-light btn-sm">
+                                <i class="fa-solid fa-right-from-bracket me-1"></i> Cerrar sesión
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <span class="text-white-50 small">Banca Digital Segura</span>
+                    }
+                </div>
+            </div>
+        </nav>
     </header>
 
-    <!-- Contenido Principal Centrado -->
-    <main class="flex-grow-1 d-flex align-items-center justify-content-center py-5">
+    <!-- Contenido Principal -->
+    <main class="flex-grow-1 py-4">
         <div class="container">
             @RenderBody()
         </div>
