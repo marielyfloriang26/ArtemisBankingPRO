@@ -4,6 +4,8 @@ using ArtemisBankingPro.Application;
 using ArtemisBankingPro.Infrastructure.Persistence;
 using ArtemisBankingPro.Infrastructure.Persistence.Contexts;
 using ArtemisBankingPro.Infrastructure.Shared;
+using ArtemisBankingPro.Application.Interfaces.Services;
+using ArtemisBankingPro.Infrastructure.Persistence.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +13,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddPersistenceInfrastructure(builder.Configuration);
 builder.Services.AddSharedInfrastructure(builder.Configuration);
+
+builder.Services.AddScoped<IAdminService, AdminService>();
 
 builder.Services.AddIdentity<Usuario, IdentityRole<int>>(options =>
     {

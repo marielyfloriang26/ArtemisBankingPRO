@@ -1,0 +1,247 @@
+@model IEnumerable<ArtemisBankingPro.Domain.Entities.Usuario>
+@{
+    ViewData["Title"] = "Gestión de Usuarios";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fa-solid fa-users-gear text-info me-2"></i>Gestión de Usuarios</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
+            <i class="fa-solid fa-user-plus me-1"></i> Crear usuario
+        </button>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Filtro por Rol -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" asp-action="Index" class="row g-3 align-items-center">
+                <div class="col-auto">
+                    <label for="rolFiltro" class="col-form-label fw-bold">Filtrar por rol:</label>
+                </div>
+                <div class="col-auto">
+                    <select name="rolFiltro" id="rolFiltro" class="form-select" onchange="this.form.submit()">
+                        <option value="Todos" selected="@(ViewBag.RolFiltro == "Todos")">Todos</option>
+                        <option value="Administrador" selected="@(ViewBag.RolFiltro == "Administrador")">Administrador</option>
+                        <option value="Cajero" selected="@(ViewBag.RolFiltro == "Cajero")">Cajero</option>
+                        <option value="Cliente" selected="@(ViewBag.RolFiltro == "Cliente")">Cliente</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabla de Usuarios -->
+    <div class="card shadow-sm">
+        <div class="card-body table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Nombre de usuario</th>
+                        <th>Cédula</th>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
+                        <th>Correo electrónico</th>
+                        <th>Tipo de usuario</th>
+                        <th>Estado</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var user in Model)
+                        {
+                            <tr>
+                                <td>@user.UserName</td>
+                                <td>@user.Cedula</td>
+                                <td>@user.Nombre</td>
+                                <td>@user.Apellido</td>
+                                <td>@user.Email</td>
+                                <td><span class="badge bg-secondary">@user.TipoUsuario</span></td>
+                                <td>
+                                    @if (user.EsActivo)
+                                    {
+                                        <span class="badge bg-success">Activo</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">Inactivo</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <a asp-action="Edit" asp-route-id="@user.Id" class="btn btn-sm btn-outline-warning" title="Editar">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </a>
+                                    
+                                    @if (user.EsActivo)
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-danger" title="Inactivar" 
+                                                onclick="abrirModalEstado(@user.Id, 'inactivar')">
+                                            <i class="fa-solid fa-user-slash"></i>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-success" title="Activar" 
+                                                onclick="abrirModalEstado(@user.Id, 'activar')">
+                                            <i class="fa-solid fa-user-check"></i>
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-4">No se encontraron usuarios registrados.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <!-- Paginación -->
+            @if (ViewBag.TotalPages > 1)
+            {
+                <nav class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                        {
+                            <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
+                                <a class="page-link" asp-action="Index" asp-route-page="@i" asp-route-rolFiltro="@ViewBag.RolFiltro">@i</a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crear Usuario -->
+<div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <form asp-action="Create" method="post" class="modal-content">
+            @Html.AntiForgeryToken()
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="createUserModalLabel"><i class="fa-solid fa-user-plus me-2"></i>Crear Nuevo Usuario</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Nombre *</label>
+                    <input type="text" name="nombre" class="form-control" required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Apellido *</label>
+                    <input type="text" name="apellido" class="form-control" required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Cédula *</label>
+                    <input type="text" name="cedula" class="form-control" required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Correo Electrónico *</label>
+                    <input type="email" name="email" class="form-control" required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Nombre de usuario *</label>
+                    <input type="text" name="userName" class="form-control" required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Tipo de usuario *</label>
+                    <select name="tipoUsuario" id="tipoUsuarioSelect" class="form-select" onchange="toggleMontoInicial()" required>
+                        <option value="">Seleccione...</option>
+                        <option value="Administrador">Administrador</option>
+                        <option value="Cajero">Cajero</option>
+                        <option value="Cliente">Cliente</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Contraseña *</label>
+                    <input type="password" name="password" class="form-control" required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Confirmar Contraseña *</label>
+                    <input type="password" name="confirmPassword" class="form-control" required />
+                </div>
+                <div class="col-md-12" id="montoInicialContainer" style="display: none;">
+                    <label class="form-label fw-bold">Monto inicial (Cuenta Principal)</label>
+                    <input type="number" step="0.01" name="montoInicial" class="form-control" value="0.00" min="0" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Guardar Usuario</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Único de Confirmación de Estado (Activar / Inactivar) -->
+<div class="modal fade" id="confirmStatusModal" tabindex="-1" aria-labelledby="confirmStatusModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form id="formToggleStatus" method="post" class="modal-content">
+            @Html.AntiForgeryToken()
+            <div class="modal-header bg-secondary text-white">
+                <h5 class="modal-title" id="confirmStatusModalLabel">Confirmación</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage" class="fw-bold fs-6 mb-0"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary" id="btnConfirmAction">Aceptar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function toggleMontoInicial() {
+            var tipo = document.getElementById("tipoUsuarioSelect").value;
+            var container = document.getElementById("montoInicialContainer");
+            if (tipo === "Cliente") {
+                container.style.display = "block";
+            } else {
+                container.style.display = "none";
+            }
+        }
+
+        function abrirModalEstado(userId, accion) {
+            var form = document.getElementById("formToggleStatus");
+            form.action = '/AdminUser/ToggleStatus/' + userId;
+            
+            var mensaje = document.getElementById("confirmMessage");
+            var btnConfirm = document.getElementById("btnConfirmAction");
+            
+            if (accion === 'inactivar') {
+                mensaje.innerText = "¿Está seguro que desea inactivar este usuario?";
+                btnConfirm.className = "btn btn-danger";
+            } else {
+                mensaje.innerText = "¿Está seguro que desea activar este usuario?";
+                btnConfirm.className = "btn btn-success";
+            }
+
+            var modal = new bootstrap.Modal(document.getElementById('confirmStatusModal'));
+            modal.show();
+        }
+    </script>
+}
