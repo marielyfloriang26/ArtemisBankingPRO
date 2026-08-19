@@ -12,11 +12,40 @@ namespace ArtemisBankingPro.Presentation.WebApp.Controllers
     {
         private readonly ITarjetaCreditoService _tarjetaCreditoService;
         private readonly ICuentaAhorroService _cuentaAhorroService;
+        private readonly IPrestamoService _prestamoService;
 
-        public ClienteController(ITarjetaCreditoService tarjetaCreditoService, ICuentaAhorroService cuentaAhorroService)
+        public ClienteController(ITarjetaCreditoService tarjetaCreditoService, ICuentaAhorroService cuentaAhorroService, IPrestamoService prestamoService)
         {
             _tarjetaCreditoService = tarjetaCreditoService;
             _cuentaAhorroService = cuentaAhorroService;
+            _prestamoService = prestamoService;
+        }
+
+        // MÉTODO HOME / LISTADO DE PRODUCTOS
+        [HttpGet]
+        public async Task<IActionResult> Index()
+        {
+            int clienteId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+            var cuentas = await _cuentaAhorroService.GetActiveCuentasByClientIdAsync(clienteId);
+            
+            // Filtramos los préstamos del cliente que estén activos/al día usando el método general de filtrado o ajustando el servicio
+            var todosLosPrestamos = await _prestamoService.GetAllPrestamosFilteredAsync(null, "Activos");
+            var prestamos = todosLosPrestamos.Where(p => p.ClienteId == clienteId).ToList();
+
+            var tarjetas = await _tarjetaCreditoService.GetActiveCardsByClientIdAsync(clienteId);
+
+            // Regla de ordenamiento: Cuenta Principal primero, luego secundarias de mayor a menor balance
+            var cuentasOrdenadas = cuentas
+                .OrderByDescending(c => c.TipoCuenta == "Principal") 
+                .ThenByDescending(c => c.Balance)
+                .ToList();
+
+            ViewBag.Cuentas = cuentasOrdenadas;
+            ViewBag.Prestamos = prestamos;
+            ViewBag.Tarjetas = tarjetas;
+
+            return View();
         }
 
         [HttpGet]

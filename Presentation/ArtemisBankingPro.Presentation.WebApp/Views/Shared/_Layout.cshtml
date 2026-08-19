@@ -119,15 +119,47 @@
                                     <i class="fa-solid fa-bars text-info"></i> Panel del Cliente
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-dark shadow">
+                                    <!-- Home -->
                                     <li>
-                                        <a class="dropdown-item py-2" asp-controller="ClienteHome" asp-action="Index">
+                                        <a class="dropdown-item py-2" asp-controller="Cliente" asp-action="Index">
                                             <i class="fa-solid fa-house me-2 text-info"></i> Home
                                         </a>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
+
+                                    <!-- Transacciones (Menú principal y opciones específicas) -->
+                                    <li><h6 class="dropdown-header text-uppercase text-muted fs-7">Transacciones</h6></li>
                                     <li>
-                                        <a class="dropdown-item py-2" asp-controller="Cliente" asp-action="Transferencia">
-                                            <i class="fa-solid fa-right-left me-2 text-info"></i> Transferencia entre cuentas
+                                        <a class="dropdown-item py-2 ps-4" asp-controller="Transaccion" asp-action="Index">
+                                            <i class="fa-solid fa-list me-2 text-warning"></i> Transacciones
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item py-2 ps-4" asp-controller="Transaccion" asp-action="Express">
+                                            <i class="fa-solid fa-bolt me-2 text-warning"></i> Transacciones - Express
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item py-2 ps-4" asp-controller="Transaccion" asp-action="TarjetaCredito">
+                                            <i class="fa-solid fa-credit-card me-2 text-warning"></i> Transacciones - Tarjeta de crédito
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item py-2 ps-4" asp-controller="Transaccion" asp-action="Prestamo">
+                                            <i class="fa-solid fa-file-invoice-dollar me-2 text-warning"></i> Transacciones - Préstamo
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item py-2 ps-4" asp-controller="Transaccion" asp-action="Beneficiarios">
+                                            <i class="fa-solid fa-users me-2 text-warning"></i> Transacciones - Beneficiarios
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+
+                                    <!-- Otras operaciones del cliente -->
+                                    <li>
+                                        <a class="dropdown-item py-2" asp-controller="Beneficiario" asp-action="Index">
+                                            <i class="fa-solid fa-address-book me-2 text-info"></i> Beneficiarios
                                         </a>
                                     </li>
                                     <li>
@@ -136,15 +168,11 @@
                                         </a>
                                     </li>
                                     <li>
-                                        <a class="dropdown-item py-2" asp-controller="Cliente" asp-action="Beneficiarios">
-                                            <i class="fa-solid fa-users me-2 text-info"></i> Beneficiarios
+                                        <a class="dropdown-item py-2" asp-controller="Cliente" asp-action="Transferencia">
+                                            <i class="fa-solid fa-right-left me-2 text-info"></i> Transferencia
                                         </a>
                                     </li>
-                                    <li>
-                                        <a class="dropdown-item py-2" asp-controller="Cliente" asp-action="Transacciones">
-                                            <i class="fa-solid fa-list me-2 text-info"></i> Mis transacciones
-                                        </a>
-                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
                                 </ul>
                             </li>
                         }

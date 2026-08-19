@@ -198,7 +198,7 @@ namespace ArtemisBankingPro.Presentation.WebApp.Controllers
             if (User.IsInRole("Cajero"))
                 return RedirectToAction("Home", "Cajero");
             if (User.IsInRole("Cliente"))
-                return RedirectToAction("Index", "ClienteHome");
+                return RedirectToAction("Index", "Cliente");
 
             return RedirectToAction(nameof(Login));
         }
@@ -209,7 +209,7 @@ namespace ArtemisBankingPro.Presentation.WebApp.Controllers
             {
                 "Administrador" => RedirectToAction("Index", "AdminHome"),
                 "Cajero" => RedirectToAction("Home", "Cajero"),
-                "Cliente" => RedirectToAction("Index", "ClienteHome"),
+                "Cliente" => RedirectToAction("Index", "Cliente"),
                 _ => RedirectToAction(nameof(Login))
             };
         }
