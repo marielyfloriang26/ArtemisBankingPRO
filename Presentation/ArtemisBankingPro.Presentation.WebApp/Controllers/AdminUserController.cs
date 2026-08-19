@@ -132,11 +132,8 @@ public class AdminUserController : Controller
             };
 
             _context.Add(cuentaPrincipal);
-            
-            // 1. Guardar primero la cuenta para que la BD le asigne su Id real
             await _context.SaveChangesAsync();
 
-            // 2. Si hay saldo inicial, registrar la transacción usando el Id de la cuenta ya guardada
             if (saldoInicial > 0)
             {
                 var transaccion = new Transaccion
@@ -150,8 +147,6 @@ public class AdminUserController : Controller
                     FechaTransaccion = DateTime.UtcNow
                 };
                 _context.Add(transaccion);
-                
-                // Guardar la transacción
                 await _context.SaveChangesAsync();
             }
         }
@@ -166,7 +161,7 @@ public class AdminUserController : Controller
         }
         catch
         {
-            TempData["Warning"] = "Usuario creado, pero no fue posible enviar el correo de activación. Intente nuevamente más tarde.";
+            TempData["Error"] = "No fue posible enviar el correo de activación. Intente nuevamente más tarde.";
         }
 
         TempData["Success"] = "Usuario creado exitosamente.";
