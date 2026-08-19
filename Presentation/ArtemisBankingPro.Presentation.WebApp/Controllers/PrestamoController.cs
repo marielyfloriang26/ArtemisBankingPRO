@@ -93,17 +93,15 @@ public class PrestamoController : Controller
             return View(model);
         }
 
-        decimal promedio = await _prestamoService.CalcularDeudaPromedioGlobalAsync();
-        decimal actual = await _prestamoService.CalcularDeudaTotalClienteAsync(model.ClienteId);
-        decimal proyectada = await _prestamoService.CalcularDeudaProyectadaAsync(model.ClienteId, model.MontoAprobado, model.TasaInteresAnual, model.PlazoMeses);
+        var riesgo = await _prestamoService.EvaluarRiesgoAsync(model.ClienteId, model.MontoAprobado, model.TasaInteresAnual, model.PlazoMeses);
 
-        if (actual > promedio)
+        if (riesgo.Tipo == TipoRiesgoPrestamo.RiesgoActual)
         {
             TempData["RiskWarning"] = "Este cliente se considera de alto riesgo, ya que su deuda actual supera el promedio del sistema.";
             TempData["Model"] = System.Text.Json.JsonSerializer.Serialize(model);
             return RedirectToAction(nameof(RiskWarning));
         }
-        else if (proyectada > promedio)
+        else if (riesgo.Tipo == TipoRiesgoPrestamo.RiesgoProyectado)
         {
             TempData["RiskWarning"] = "Asignar este préstamo convertirá al cliente en un cliente de alto riesgo, ya que su deuda superará el umbral promedio del sistema.";
             TempData["Model"] = System.Text.Json.JsonSerializer.Serialize(model);

@@ -8,4 +8,8 @@ public interface ITransaccionCajeroService
     // Pago a préstamo
     Task<(string? error, PagoPrestamoCajeroConfirmViewModel? confirm)> PreviewPagoPrestamoAsync(int cajeroId, PagoPrestamoCajeroFormViewModel model);
     Task<OperationResultViewModel> EjecutarPagoPrestamoAsync(int cajeroId, PagoPrestamoCajeroConfirmViewModel model);
+
+    // Transacciones a cuentas de terceros
+    Task<(string? error, TransaccionTercerosCajeroConfirmViewModel? confirm)> PreviewTransaccionTercerosAsync(int cajeroId, TransaccionTercerosCajeroFormViewModel model);
+    Task<OperationResultViewModel> EjecutarTransaccionTercerosAsync(int cajeroId, TransaccionTercerosCajeroConfirmViewModel model);
 }

@@ -1,0 +1,50 @@
+@model ArtemisBankingPro.Application.ViewModels.Transacciones.TransaccionTercerosCajeroFormViewModel
+
+@{
+    ViewData["Title"] = "Transacciones a cuentas de terceros";
+}
+
+<div class="container mt-4">
+    <h2>Transacciones a cuentas de terceros</h2>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+    <form asp-action="TransaccionTerceros" method="post">
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger">
+                @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+            </div>
+        }
+
+        <div class="mb-3">
+            <label asp-for="NumeroCuentaOrigen" class="form-label">Número de cuenta origen</label>
+            <input asp-for="NumeroCuentaOrigen" class="form-control" />
+            <span asp-validation-for="NumeroCuentaOrigen" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="NumeroCuentaDestino" class="form-label">Número de cuenta destino</label>
+            <input asp-for="NumeroCuentaDestino" class="form-control" />
+            <span asp-validation-for="NumeroCuentaDestino" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Monto" class="form-label">Monto de la transacción</label>
+            <input asp-for="Monto" type="number" step="0.01" class="form-control" />
+            <span asp-validation-for="Monto" class="text-danger"></span>
+        </div>
+
+        <div class="mt-4">
+            <a asp-controller="Home" asp-action="Cajero" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Realizar transacción</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

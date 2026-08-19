@@ -16,4 +16,9 @@ public interface IPrestamoService
     Task<EditTasaPrestamoViewModel?> GetEditTasaViewModelAsync(int id);
     Task<string> EditTasaInteresAsync(EditTasaPrestamoViewModel model);
     Task<bool> ExisteClienteConCedulaAsync(string cedula);
+    Task<bool> ExisteClientePorIdAsync(int clienteId);
+    Task<bool> ExistePrestamoAsync(int id);
+    Task<string> ValidarElegibilidadPrestamoAsync(int clienteId);
+    Task<RiesgoPrestamoResultado> EvaluarRiesgoAsync(int clienteId, decimal monto, decimal tasaAnual, int plazo);
+    Task<PrestamoViewModel?> GetPrestamoActivoByClienteIdAsync(int clienteId);
 }

@@ -24,6 +24,7 @@ public static class ServiceRegistration
         services.AddTransient<ArtemisBankingPro.Application.Interfaces.Repositories.IProductoTarjetaCreditoRepository, ArtemisBankingPro.Infrastructure.Persistence.Repositories.ProductoTarjetaCreditoRepository>();
         services.AddTransient<ArtemisBankingPro.Application.Interfaces.Repositories.IBeneficiarioRepository, ArtemisBankingPro.Infrastructure.Persistence.Repositories.BeneficiarioRepository>();
         services.AddTransient<ArtemisBankingPro.Application.Interfaces.Repositories.ITarjetaCreditoRepository, ArtemisBankingPro.Infrastructure.Persistence.Repositories.TarjetaCreditoRepository>();
+        services.AddTransient<ArtemisBankingPro.Application.Interfaces.Repositories.IComercioRepository, ArtemisBankingPro.Infrastructure.Persistence.Repositories.ComercioRepository>();
         #endregion
     }
 }

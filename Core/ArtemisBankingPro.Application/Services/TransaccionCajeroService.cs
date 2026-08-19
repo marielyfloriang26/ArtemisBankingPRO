@@ -12,6 +12,7 @@ namespace ArtemisBankingPro.Application.Services;
 public class TransaccionCajeroService : ITransaccionCajeroService
 {
     private const string MensajeCorreoFallido = "El pago fue realizado correctamente, pero no fue posible enviar el correo de notificación.";
+    private const string MensajeCorreoFallidoTerceros = "La transacción fue realizada correctamente, pero no fue posible enviar una o más notificaciones por correo.";
 
     private readonly ICuentaAhorroRepository _cuentaRepo;
     private readonly IPrestamoRepository _prestamoRepo;
@@ -210,6 +211,110 @@ public class TransaccionCajeroService : ITransaccionCajeroService
             Success = true,
             CorreoFallido = !correoOk,
             Message = correoOk ? "Pago realizado correctamente." : MensajeCorreoFallido
+        };
+    }
+
+    #endregion
+
+    #region Transacciones a cuentas de terceros
+
+    private async Task<(string? error, CuentaAhorro? origen, CuentaAhorro? destino)> ValidarTransaccionTercerosAsync(int cajeroId, string numeroCuentaOrigen, string numeroCuentaDestino, decimal monto)
+    {
+        var origen = await _cuentaRepo.GetByNumeroCuentaAsync(numeroCuentaOrigen);
+        if (origen == null || origen.Estado != "Activa")
+            return ("El número de cuenta origen ingresado no corresponde a una cuenta válida.", null, null);
+
+        var destino = await _cuentaRepo.GetByNumeroCuentaAsync(numeroCuentaDestino);
+        if (destino == null || destino.Estado != "Activa")
+            return ("El número de cuenta destino ingresado no corresponde a una cuenta válida.", null, null);
+
+        if (origen.Id == destino.Id)
+            return ("La cuenta origen y la cuenta destino no pueden ser la misma.", null, null);
+
+        if (origen.Balance < monto)
+        {
+            await RegistrarTransaccionRechazadaAsync(origen.Id, origen.NumeroCuenta, monto, destino.NumeroCuenta, cajeroId);
+            return ("El monto ingresado excede el saldo disponible de la cuenta.", null, null);
+        }
+
+        return (null, origen, destino);
+    }
+
+    public async Task<(string? error, TransaccionTercerosCajeroConfirmViewModel? confirm)> PreviewTransaccionTercerosAsync(int cajeroId, TransaccionTercerosCajeroFormViewModel model)
+    {
+        decimal monto = model.Monto ?? 0m;
+        var (error, origen, destino) = await ValidarTransaccionTercerosAsync(cajeroId, model.NumeroCuentaOrigen, model.NumeroCuentaDestino, monto);
+        if (error != null) return (error, null);
+
+        var titularOrigen = await _usuarioRepo.GetByIdAsync(origen!.ClienteId);
+        var titularDestino = await _usuarioRepo.GetByIdAsync(destino!.ClienteId);
+
+        var confirm = new TransaccionTercerosCajeroConfirmViewModel
+        {
+            CuentaOrigenId = origen.Id,
+            NumeroCuentaOrigen = origen.NumeroCuenta,
+            TitularCuentaOrigen = titularOrigen != null ? NombreCompleto(titularOrigen) : "",
+            CuentaDestinoId = destino.Id,
+            NumeroCuentaDestino = destino.NumeroCuenta,
+            TitularCuentaDestino = titularDestino != null ? NombreCompleto(titularDestino) : "",
+            Monto = monto
+        };
+        return (null, confirm);
+    }
+
+    public async Task<OperationResultViewModel> EjecutarTransaccionTercerosAsync(int cajeroId, TransaccionTercerosCajeroConfirmViewModel model)
+    {
+        var (error, origen, destino) = await ValidarTransaccionTercerosAsync(cajeroId, model.NumeroCuentaOrigen, model.NumeroCuentaDestino, model.Monto);
+        if (error != null) return new OperationResultViewModel { Success = false, Message = error };
+
+        origen!.Balance -= model.Monto;
+        await _cuentaRepo.UpdateAsync(origen, origen.Id);
+
+        destino!.Balance += model.Monto;
+        await _cuentaRepo.UpdateAsync(destino, destino.Id);
+
+        var fecha = DateTime.UtcNow;
+
+        await _transaccionRepo.AddAsync(new Transaccion
+        {
+            CuentaOrigenId = origen.Id,
+            Monto = model.Monto,
+            TipoTransaccion = "DÉBITO",
+            Origen = origen.NumeroCuenta,
+            Beneficiario = destino.NumeroCuenta,
+            Estado = "APROBADA",
+            UsuarioResponsableId = cajeroId,
+            FechaTransaccion = fecha
+        });
+
+        await _transaccionRepo.AddAsync(new Transaccion
+        {
+            CuentaDestinoId = destino.Id,
+            Monto = model.Monto,
+            TipoTransaccion = "CRÉDITO",
+            Origen = origen.NumeroCuenta,
+            Beneficiario = destino.NumeroCuenta,
+            Estado = "APROBADA",
+            UsuarioResponsableId = cajeroId,
+            FechaTransaccion = fecha
+        });
+
+        var titularOrigen = await _usuarioRepo.GetByIdAsync(origen.ClienteId);
+        var titularDestino = await _usuarioRepo.GetByIdAsync(destino.ClienteId);
+
+        bool correoOk = true;
+        correoOk &= await EnviarCorreoSeguroAsync(titularOrigen?.Email,
+            $"Transacción realizada a la cuenta {UltimosDigitos(destino.NumeroCuenta)}",
+            $"Monto transferido: {FormatoMonto(model.Monto)}. Cuenta origen terminada en: {UltimosDigitos(origen.NumeroCuenta)}. Cuenta destino terminada en: {UltimosDigitos(destino.NumeroCuenta)}. Fecha y hora: {fecha}.");
+        correoOk &= await EnviarCorreoSeguroAsync(titularDestino?.Email,
+            $"Transacción enviada desde la cuenta {UltimosDigitos(origen.NumeroCuenta)}",
+            $"Monto recibido: {FormatoMonto(model.Monto)}. Cuenta origen terminada en: {UltimosDigitos(origen.NumeroCuenta)}. Cuenta destino terminada en: {UltimosDigitos(destino.NumeroCuenta)}. Fecha y hora: {fecha}.");
+
+        return new OperationResultViewModel
+        {
+            Success = true,
+            CorreoFallido = !correoOk,
+            Message = correoOk ? "Transacción realizada correctamente." : MensajeCorreoFallidoTerceros
         };
     }
 

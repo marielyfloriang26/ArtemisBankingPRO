@@ -182,17 +182,33 @@ public class PrestamoService : IPrestamoService
         }
     }
 
+    private async Task<(string? Error, Usuario? Cliente, CuentaAhorro? CuentaPrincipal)> ValidarElegibilidadClienteAsync(int clienteId)
+    {
+        var cliente = await _usuarioRepo.GetByIdAsync(clienteId);
+        if (cliente == null || !cliente.EsActivo) return ("El cliente seleccionado no existe o no está activo.", null, null);
+
+        var prestamoActivo = await _prestamoRepo.GetPrestamoActivoByClienteIdAsync(clienteId);
+        if (prestamoActivo != null) return ("Este cliente ya tiene un préstamo activo asignado.", null, null);
+
+        var cuentas = await _cuentaRepo.GetByClienteIdAsync(clienteId);
+        var cuentaPrincipal = cuentas.FirstOrDefault(c => c.TipoCuenta == "Principal" && c.Estado == "Activa");
+        if (cuentaPrincipal == null) return ("El cliente no tiene una cuenta de ahorro principal activa para recibir el desembolso del préstamo.", null, null);
+
+        return (null, cliente, cuentaPrincipal);
+    }
+
+    public async Task<string> ValidarElegibilidadPrestamoAsync(int clienteId)
+    {
+        var (error, _, _) = await ValidarElegibilidadClienteAsync(clienteId);
+        return error ?? string.Empty;
+    }
+
     public async Task<string> AsignarPrestamoAsync(SavePrestamoViewModel model)
     {
-        var cliente = await _usuarioRepo.GetByIdAsync(model.ClienteId);
-        if (cliente == null || !cliente.EsActivo) return "El cliente seleccionado no existe o no está activo.";
-
-        var prestamoActivo = await _prestamoRepo.GetPrestamoActivoByClienteIdAsync(model.ClienteId);
-        if (prestamoActivo != null) return "Este cliente ya tiene un préstamo activo asignado.";
-
-        var cuentas = await _cuentaRepo.GetByClienteIdAsync(model.ClienteId);
-        var cuentaPrincipal = cuentas.FirstOrDefault(c => c.TipoCuenta == "Principal" && c.Estado == "Activa");
-        if (cuentaPrincipal == null) return "El cliente no tiene una cuenta de ahorro principal activa para recibir el desembolso del préstamo.";
+        var (error, cliente, cuentaPrincipal) = await ValidarElegibilidadClienteAsync(model.ClienteId);
+        if (error != null) return error;
+        cliente = cliente!;
+        cuentaPrincipal = cuentaPrincipal!;
 
         string numeroPrestamo = await GenerarNumeroPrestamoAsync();
 
@@ -327,7 +343,7 @@ public class PrestamoService : IPrestamoService
         p.TasaInteresAnual = model.NuevaTasaInteresAnual;
         await _prestamoRepo.UpdateAsync(p, p.Id);
 
-        decimal saldoRestante = cuotasFuturas.First().MontoCapital + cuotasFuturas.Skip(1).Sum(c => c.MontoCapital); // Wait, this is just remaining principal. We can compute remaining principal by summing MontoCapital of all pending quotas.
+        decimal saldoRestante = cuotasFuturas.Sum(c => c.MontoCapital);
         
         decimal r = (model.NuevaTasaInteresAnual / 100m) / 12m;
         int n = cuotasFuturas.Count;
@@ -365,5 +381,43 @@ public class PrestamoService : IPrestamoService
         } catch { }
 
         return string.Empty;
+    }
+
+    public async Task<bool> ExisteClientePorIdAsync(int clienteId)
+    {
+        var cliente = await _usuarioRepo.GetByIdAsync(clienteId);
+        return cliente != null;
+    }
+
+    public async Task<bool> ExistePrestamoAsync(int id)
+    {
+        var prestamo = await _prestamoRepo.GetByIdAsync(id);
+        return prestamo != null;
+    }
+
+    public async Task<RiesgoPrestamoResultado> EvaluarRiesgoAsync(int clienteId, decimal monto, decimal tasaAnual, int plazo)
+    {
+        decimal promedio = await CalcularDeudaPromedioGlobalAsync();
+        decimal actual = await CalcularDeudaTotalClienteAsync(clienteId);
+        decimal proyectada = await CalcularDeudaProyectadaAsync(clienteId, monto, tasaAnual, plazo);
+
+        var tipo = TipoRiesgoPrestamo.Ninguno;
+        if (actual > promedio) tipo = TipoRiesgoPrestamo.RiesgoActual;
+        else if (proyectada > promedio) tipo = TipoRiesgoPrestamo.RiesgoProyectado;
+
+        return new RiesgoPrestamoResultado
+        {
+            Tipo = tipo,
+            DeudaActual = actual,
+            DeudaProyectada = proyectada,
+            DeudaPromedio = promedio
+        };
+    }
+
+    public async Task<PrestamoViewModel?> GetPrestamoActivoByClienteIdAsync(int clienteId)
+    {
+        var prestamo = await _prestamoRepo.GetPrestamoActivoByClienteIdAsync(clienteId);
+        if (prestamo == null) return null;
+        return await GetPrestamoDetailsAsync(prestamo.Id);
     }
 }

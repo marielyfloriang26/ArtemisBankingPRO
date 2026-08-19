@@ -73,4 +73,55 @@ public class CajeroController : Controller
     }
 
     #endregion
+
+    #region Transacciones a cuentas de terceros
+
+    public IActionResult TransaccionTerceros()
+    {
+        return View(new TransaccionTercerosCajeroFormViewModel());
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> TransaccionTerceros(TransaccionTercerosCajeroFormViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var cajeroId = GetCurrentUserId();
+        var (error, confirm) = await _transaccionCajeroService.PreviewTransaccionTercerosAsync(cajeroId, model);
+        if (error != null)
+        {
+            TempData["ErrorMessage"] = error;
+            return View(model);
+        }
+
+        return View("TransaccionTercerosConfirm", confirm);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> TransaccionTercerosConfirm(TransaccionTercerosCajeroConfirmViewModel model)
+    {
+        var result = await _transaccionCajeroService.EjecutarTransaccionTercerosAsync(GetCurrentUserId(), model);
+        if (!result.Success)
+        {
+            TempData["ErrorMessage"] = result.Message;
+            return RedirectToAction(nameof(TransaccionTerceros));
+        }
+
+        if (result.CorreoFallido)
+        {
+            TempData["WarningMessage"] = result.Message;
+        }
+        else
+        {
+            TempData["SuccessMessage"] = result.Message;
+        }
+        return RedirectToAction("Cajero", "Home");
+    }
+
+    #endregion
 }
