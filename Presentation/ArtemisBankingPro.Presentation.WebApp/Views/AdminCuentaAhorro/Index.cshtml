@@ -1,0 +1,140 @@
+@model IEnumerable<ArtemisBankingPro.Domain.Entities.CuentaAhorro>
+@{
+    ViewData["Title"] = "Gestión de Cuentas de Ahorro";
+    string cedulaFiltro = ViewBag.CedulaFiltro as string ?? "";
+    string estadoFiltro = ViewBag.EstadoFiltro as string ?? "Activas";
+    string tipoFiltro = ViewBag.TipoFiltro as string ?? "Todas";
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
+}
+
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Gestión de Cuentas de Ahorro</h2>
+        <a asp-action="SelectClient" class="btn btn-primary">
+            <i class="fas fa-plus-circle me-1"></i> Asignar cuenta de ahorro
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Filtros y Búsqueda -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" asp-action="Index" class="row g-3">
+                <div class="col-md-4">
+                    <label for="cedulaFiltro" class="form-label">Buscar por Cédula del Cliente</label>
+                    <input type="text" class="form-control" id="cedulaFiltro" name="cedulaFiltro" value="@cedulaFiltro" placeholder="Ej. 001-0000000-1">
+                </div>
+                <div class="col-md-3">
+                    <label for="estadoFiltro" class="form-label">Estado</label>
+                    <select class="form-select" id="estadoFiltro" name="estadoFiltro">
+                        <option value="Activas" selected="@(estadoFiltro == "Activas")">Activas</option>
+                        <option value="Canceladas" selected="@(estadoFiltro == "Canceladas")">Canceladas</option>
+                        <option value="Todas" selected="@(estadoFiltro == "Todas")">Todas</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="tipoFiltro" class="form-label">Tipo de Cuenta</label>
+                    <select class="form-select" id="tipoFiltro" name="tipoFiltro">
+                        <option value="Todas" selected="@(tipoFiltro == "Todas")">Todas</option>
+                        <option value="Principal" selected="@(tipoFiltro == "Principal")">Principal</option>
+                        <option value="Secundaria" selected="@(tipoFiltro == "Secundaria")">Secundaria</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-dark w-100 me-2"><i class="fas fa-search"></i> Filtrar</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary"><i class="fas fa-redo"></i></a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Listado de Cuentas -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Número de cuenta</th>
+                            <th>Cliente</th>
+                            <th>Balance</th>
+                            <th>Tipo de cuenta</th>
+                            <th>Estado</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td><strong>@item.NumeroCuenta</strong></td>
+                                    <td>@(item.Cliente != null ? $"{item.Cliente.Nombre} {item.Cliente.Apellido}" : "N/D")</td>
+                                    <td>RD$ @item.Balance.ToString("N2")</td>
+                                    <td>
+                                        <span class="badge @(item.TipoCuenta == "Principal" ? "bg-primary" : "bg-secondary")">
+                                            @item.TipoCuenta
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge @(item.Estado == "Activa" ? "bg-success" : "bg-danger")">
+                                            @item.Estado
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info text-white" title="Ver detalles">
+                                            <i class="fas fa-list-alt"></i> Detalles
+                                        </a>
+                                        @if (item.Estado == "Activa" && item.TipoCuenta == "Secundaria")
+                                        {
+                                            <a asp-action="Cancel" asp-route-id="@item.Id" class="btn btn-sm btn-danger" title="Cancelar cuenta">
+                                                <i class="fas fa-ban"></i> Cancelar
+                                            </a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">No se encontraron cuentas de ahorro registradas.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Paginación -->
+    @if (totalPages > 1)
+    {
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                @for (int i = 1; i <= totalPages; i++)
+                {
+                    <li class="page-item @(i == currentPage ? "active" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-page="@i" asp-route-cedulaFiltro="@cedulaFiltro" asp-route-estadoFiltro="@estadoFiltro" asp-route-tipoFiltro="@tipoFiltro">@i</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+</div>

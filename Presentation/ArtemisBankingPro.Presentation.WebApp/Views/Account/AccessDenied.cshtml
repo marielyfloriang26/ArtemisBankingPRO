@@ -1,14 +1,30 @@
 @{
     ViewData["Title"] = "Acceso denegado";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="container mt-4">
-    <div class="alert alert-danger">
-        No posee permisos para acceder a esta sección.
-    </div>
+<div class="container py-5 text-center">
+    <div class="alert alert-danger shadow-sm p-4 d-inline-block">
+        <h4 class="alert-heading fw-bold">Acceso Denegado</h4>
+        <p class="mb-3">No posee permisos para acceder a esta sección.</p>
+        
+        <hr>
 
-    @if (User.IsInRole("Cliente"))
-    {
-        <a asp-controller="Home" asp-action="Cliente" class="btn btn-primary">Volver al Home</a>
-    }
+        @if (User.IsInRole("Administrador"))
+        {
+            <a asp-controller="AdminHome" asp-action="Index" class="btn btn-primary px-4">Volver al Home</a>
+        }
+        else if (User.IsInRole("Cajero"))
+        {
+            <a asp-controller="CajeroHome" asp-action="Index" class="btn btn-primary px-4">Volver al Home</a>
+        }
+        else if (User.IsInRole("Cliente"))
+        {
+            <a asp-controller="ClienteHome" asp-action="Index" class="btn btn-primary px-4">Volver al Home</a>
+        }
+        else
+        {
+            <a asp-controller="Account" asp-action="Login" class="btn btn-primary px-4">Ir al Login</a>
+        }
+    </div>
 </div>

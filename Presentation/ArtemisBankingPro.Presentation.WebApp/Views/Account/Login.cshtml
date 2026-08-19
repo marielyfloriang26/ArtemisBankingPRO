@@ -1,0 +1,131 @@
+@model ArtemisBankingPro.Application.ViewModels.Account.LoginViewModel
+
+@{
+    ViewData["Title"] = "Iniciar Sesión";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-5 col-lg-4">
+        <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+            <!-- Encabezado de la tarjeta con tono bancario -->
+            <div class="bg-primary text-white text-center py-4 px-3">
+                <div class="mb-2">
+                    <i class="fa-solid fa-lock fa-2x text-info"></i>
+                </div>
+                <h4 class="fw-bold mb-0">Bienvenido a Artemis</h4>
+                <p class="text-white-50 small mb-0">Ingrese sus credenciales para acceder</p>
+            </div>
+
+            <div class="card-body p-4 bg-white">
+                @if (TempData["Success"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show small" role="alert">
+                        @TempData["Success"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                @if (TempData["Error"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show small" role="alert">
+                        @TempData["Error"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                <form asp-action="Login" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="UserName" class="form-label fw-semibold text-secondary small">Nombre de usuario</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light text-muted"><i class="fa-solid fa-user"></i></span>
+                            <input asp-for="UserName" class="form-control" placeholder="Ingrese su usuario" autocomplete="username" />
+                        </div>
+                        <span asp-validation-for="UserName" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Password" class="form-label fw-semibold text-secondary small">Contraseña</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light text-muted"><i class="fa-solid fa-key"></i></span>
+                            <input asp-for="Password" class="form-control" type="password" placeholder="••••••••" autocomplete="current-password" />
+                        </div>
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    </div>
+
+                    <div class="d-grid gap-2 mb-3">
+                        <button type="submit" class="btn btn-primary py-2 fw-semibold shadow-sm">Iniciar sesión</button>
+                    </div>
+
+                    <div class="text-center mt-3">
+                        <a href="#" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal" class="text-decoration-none small text-primary fw-medium">
+                            <i class="fa-solid fa-question-circle me-1"></i>¿Olvidó su contraseña? Restablecer aquí
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Solicitar Restablecimiento de Contraseña -->
+<div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form id="forgotPasswordForm" asp-action="SolicitarRestablecimiento" method="post">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fw-bold text-dark fs-6" id="forgotPasswordModalLabel">
+                        <i class="fa-solid fa-shield-halved text-primary me-2"></i>Recuperación de Contraseña
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div id="forgotPasswordAlert" class="alert d-none small"></div>
+                    <p class="text-muted small mb-3">Ingrese el nombre de usuario asociado a su cuenta para recibir las instrucciones de restablecimiento.</p>
+                    <div class="mb-3">
+                        <label for="modalUserName" class="form-label fw-semibold small">Nombre de usuario</label>
+                        <input type="text" id="modalUserName" name="UserName" class="form-control" placeholder="Usuario registrado" required />
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-4">Enviar solicitud</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.getElementById("forgotPasswordForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const alertBox = document.getElementById("forgotPasswordAlert");
+
+            try {
+                const response = await fetch('@Url.Action("SolicitarRestablecimiento", "Account")', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                
+                alertBox.classList.remove("d-none", "alert-success", "alert-danger");
+                if (result.success || result.message.includes("enviado")) {
+                    alertBox.classList.add("alert-success");
+                    alertBox.textContent = result.message;
+                } else {
+                    alertBox.classList.add("alert-danger");
+                    alertBox.textContent = result.message;
+                }
+            } catch (error) {
+                alertBox.classList.remove("d-none");
+                alertBox.classList.add("alert-danger");
+                alertBox.textContent = "Ocurrió un error al procesar la solicitud.";
+            }
+        });
+    </script>
+}

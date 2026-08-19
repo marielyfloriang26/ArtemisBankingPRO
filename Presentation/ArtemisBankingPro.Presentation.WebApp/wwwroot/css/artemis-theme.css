@@ -1,0 +1,166 @@
+/* Importar tipografía moderna de Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+:root {
+    --primary-gradient: linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%);
+    --success-gradient: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    --danger-gradient: linear-gradient(135deg, #F43F5E 0%, #E11D48 100%);
+    
+    --bg-gradient-start: #0f172a; /* Azul muy oscuro */
+    --bg-gradient-end: #1e1b4b;   /* Indigo oscuro */
+    
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+}
+
+/* Fondo global para toda la aplicación */
+body {
+    font-family: 'Outfit', sans-serif !important;
+    background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%) !important;
+    color: var(--text-primary) !important;
+    min-height: 100vh;
+}
+
+/* --------------------------------------
+   EFECTO CRISTAL (GLASSMORPHISM) PARA CARDS
+----------------------------------------- */
+.card {
+    background: var(--glass-bg) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+    color: var(--text-primary) !important;
+}
+
+.card-header {
+    background: transparent !important;
+    border-bottom: 1px solid var(--glass-border) !important;
+    padding: 1.5rem 2rem !important;
+    border-radius: 20px 20px 0 0 !important;
+}
+
+/* Gradientes para los títulos dependiendo de la acción */
+.card-header.bg-primary h4 {
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+}
+
+.card-header.bg-success h4 {
+    background: var(--success-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+}
+
+.card-header.bg-danger h4 {
+    background: var(--danger-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+}
+
+.card-body {
+    padding: 2rem !important;
+}
+
+/* --------------------------------------
+   CONTROLES DE FORMULARIO MODERNOS
+----------------------------------------- */
+.form-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.form-control, .form-select {
+    background: rgba(15, 23, 42, 0.6) !important;
+    border: 1px solid var(--glass-border) !important;
+    color: var(--text-primary) !important;
+    border-radius: 12px !important;
+    padding: 0.8rem 1rem !important;
+    transition: all 0.3s ease !important;
+    font-weight: 400;
+}
+
+.form-control:focus, .form-select:focus {
+    background: rgba(15, 23, 42, 0.9) !important;
+    border-color: #8B5CF6 !important;
+    box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15) !important;
+}
+
+.input-group-text {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid var(--glass-border) !important;
+    color: var(--text-secondary) !important;
+    border-radius: 12px 0 0 12px !important;
+}
+
+/* Ajuste para que las opciones del select se vean bien en modo oscuro */
+option {
+    background-color: var(--bg-gradient-end);
+    color: var(--text-primary);
+}
+
+/* --------------------------------------
+   BOTONES Y MICRO-ANIMACIONES
+----------------------------------------- */
+.btn {
+    border-radius: 12px !important;
+    padding: 0.8rem 1.5rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.5px;
+    border: none !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.btn-primary { background: var(--primary-gradient) !important; color: white !important; }
+.btn-success { background: var(--success-gradient) !important; color: white !important; }
+.btn-danger { background: var(--danger-gradient) !important; color: white !important; }
+
+/* Animación al pasar el mouse por los botones */
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -10px #8B5CF6 !important; }
+.btn-success:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -10px #10B981 !important; }
+.btn-danger:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -10px #F43F5E !important; }
+
+.btn-light {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--glass-border) !important;
+}
+.btn-light:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+    transform: translateY(-2px);
+}
+
+/* Botones grandes del Dashboard de Cajero */
+.btn-outline-primary {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(139, 92, 246, 0.5) !important;
+    color: var(--text-primary) !important;
+    border-radius: 20px !important;
+}
+
+.btn-outline-primary:hover {
+    background: var(--primary-gradient) !important;
+    color: white !important;
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px -10px #8B5CF6 !important;
+}
+
+/* Alertas de éxito */
+.alert-success {
+    background: rgba(16, 185, 129, 0.1) !important;
+    border: 1px solid rgba(16, 185, 129, 0.2) !important;
+    color: #34d399 !important;
+    border-radius: 12px !important;
+    backdrop-filter: blur(8px);
+}

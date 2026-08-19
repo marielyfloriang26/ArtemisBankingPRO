@@ -1,0 +1,77 @@
+@model ArtemisBankingPro.Application.ViewModels.Cliente.AvanceEfectivoViewModel
+@{
+    ViewData["Title"] = "Avance de Efectivo";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Realizar Avance de Efectivo</h4>
+                </div>
+                <div class="card-body">
+                    
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success">
+                            @TempData["SuccessMessage"]
+                        </div>
+                    }
+
+                    <form asp-action="AvanceEfectivo" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="TarjetaCreditoId" class="form-label">Tarjeta de Crédito</label>
+                            <select asp-for="TarjetaCreditoId" class="form-select" required>
+                                <option value="">-- Seleccione una Tarjeta --</option>
+                                @if (ViewBag.Tarjetas != null)
+                                {
+                                    foreach (var tarjeta in ViewBag.Tarjetas)
+                                    {
+                                        <option value="@tarjeta.Id">Tarjeta terminada en @tarjeta.NumeroTarjeta.Substring(tarjeta.NumeroTarjeta.Length - 4) - Disp: $@(tarjeta.LimiteCredito - tarjeta.MontoAdeudado)</option>
+                                    }
+                                }
+                            </select>
+                            <span asp-validation-for="TarjetaCreditoId" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="CuentaAhorroDestinoId" class="form-label">Cuenta de Ahorro Destino</label>
+                            <select asp-for="CuentaAhorroDestinoId" class="form-select" required>
+                                <option value="">-- Seleccione una Cuenta --</option>
+                                @if (ViewBag.Cuentas != null)
+                                {
+                                    foreach (var cuenta in ViewBag.Cuentas)
+                                    {
+                                        <option value="@cuenta.Id">Cuenta No. @cuenta.NumeroCuenta</option>
+                                    }
+                                }
+                            </select>
+                            <span asp-validation-for="CuentaAhorroDestinoId" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Monto" class="form-label">Monto a Avanzar</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input asp-for="Monto" type="number" step="0.01" class="form-control" required />
+                            </div>
+                            <small class="text-muted">Se aplicará un cargo del 6.25% sobre el monto solicitado.</small>
+                            <span asp-validation-for="Monto" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Realizar Avance</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

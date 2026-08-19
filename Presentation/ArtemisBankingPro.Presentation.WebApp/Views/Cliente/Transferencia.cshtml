@@ -1,0 +1,67 @@
+@model ArtemisBankingPro.Application.ViewModels.Cliente.TransferenciaViewModel
+@{
+    ViewData["Title"] = "Transferencia Entre Cuentas";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">Transferencia de Fondos</h4>
+                </div>
+                <div class="card-body">
+                    
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success">
+                            @TempData["SuccessMessage"]
+                        </div>
+                    }
+
+                    <form asp-action="Transferencia" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="CuentaOrigenId" class="form-label">Cuenta de Origen</label>
+                            <select asp-for="CuentaOrigenId" class="form-select" required>
+                                <option value="">-- Seleccione una Cuenta --</option>
+                                @if (ViewBag.Cuentas != null)
+                                {
+                                    foreach (var cuenta in ViewBag.Cuentas)
+                                    {
+                                        <option value="@cuenta.Id">Cuenta No. @cuenta.NumeroCuenta - Disp: $@cuenta.Balance</option>
+                                    }
+                                }
+                            </select>
+                            <span asp-validation-for="CuentaOrigenId" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="NumeroCuentaDestino" class="form-label">Número de Cuenta Destino</label>
+                            <input asp-for="NumeroCuentaDestino" type="text" class="form-control" placeholder="Ej: 123456789" required />
+                            <span asp-validation-for="NumeroCuentaDestino" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Monto" class="form-label">Monto a Transferir</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input asp-for="Monto" type="number" step="0.01" class="form-control" required />
+                            </div>
+                            <span asp-validation-for="Monto" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success">Realizar Transferencia</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

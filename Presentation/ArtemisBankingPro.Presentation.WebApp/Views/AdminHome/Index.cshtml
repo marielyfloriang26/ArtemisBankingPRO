@@ -1,0 +1,82 @@
+@using ArtemisBankingPro.Application.ViewModels.Admin
+@model AdminHomeViewModel
+
+@{
+    ViewData["Title"] = "Panel de Administrador";
+}
+
+<h2 class="mb-4">Panel General del Administrador</h2>
+
+<div class="row g-3">
+    <!-- Fila 1: Transacciones y Pagos -->
+    <div class="col-md-3">
+        <div class="card p-3 shadow-sm border-0 h-100">
+            <h6 class="text-muted">Transacciones Históricas</h6>
+            <h4>@Model.TotalTransaccionesHistoricas</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 shadow-sm border-0 h-100">
+            <h6 class="text-muted">Transacciones del Día</h6>
+            <h4>@Model.TransaccionesDelDia</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 shadow-sm border-0 h-100">
+            <h6 class="text-muted">Pagos Históricos</h6>
+            <h4>@Model.TotalPagosHistoricos</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 shadow-sm border-0 h-100">
+            <h6 class="text-muted">Pagos del Día</h6>
+            <h4>@Model.PagosDelDia</h4>
+        </div>
+    </div>
+
+    <!-- Fila 2: Clientes y Promedios -->
+    <div class="col-md-3">
+        <div class="card p-3 shadow-sm border-0 h-100">
+            <h6 class="text-muted">Clientes Activos</h6>
+            <h4>@Model.ClientesActivos</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 shadow-sm border-0 h-100">
+            <h6 class="text-muted">Clientes Inactivos</h6>
+            <h4>@Model.ClientesInactivos</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 shadow-sm border-0 h-100">
+            <h6 class="text-muted">Productos Activos</h6>
+            <h4>@Model.TotalProductosFinancierosActivos</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 shadow-sm border-0 h-100">
+            <h6 class="text-muted">Promedio Deuda Cliente</h6>
+            <h4>@Model.MontoPromedioDeudaPorCliente.ToString("C2")</h4>
+        </div>
+    </div>
+
+    <!-- Fila 3: Detalle de Productos Financieros -->
+    <div class="col-md-4">
+        <div class="card p-3 shadow-sm border-0 h-100 bg-light">
+            <h6 class="text-muted">Préstamos Vigentes</h6>
+            <h4>@Model.PrestamosVigentes</h4>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-3 shadow-sm border-0 h-100 bg-light">
+            <h6 class="text-muted">Tarjetas Activas</h6>
+            <h4>@Model.TarjetasCreditoActivas</h4>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-3 shadow-sm border-0 h-100 bg-light">
+            <h6 class="text-muted">Cuentas Ahorro Activas</h6>
+            <h4>@Model.CuentasAhorroActivas</h4>
+        </div>
+    </div>
+</div>
