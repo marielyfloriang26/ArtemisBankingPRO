@@ -196,7 +196,7 @@ namespace ArtemisBankingPro.Presentation.WebApp.Controllers
             if (User.IsInRole("Administrador"))
                 return RedirectToAction("Index", "AdminHome");
             if (User.IsInRole("Cajero"))
-                return RedirectToAction("Index", "CajeroHome");
+                return RedirectToAction("Home", "Cajero");
             if (User.IsInRole("Cliente"))
                 return RedirectToAction("Index", "ClienteHome");
 
@@ -208,7 +208,7 @@ namespace ArtemisBankingPro.Presentation.WebApp.Controllers
             return tipoUsuario switch
             {
                 "Administrador" => RedirectToAction("Index", "AdminHome"),
-                "Cajero" => RedirectToAction("Index", "CajeroHome"),
+                "Cajero" => RedirectToAction("Home", "Cajero"),
                 "Cliente" => RedirectToAction("Index", "ClienteHome"),
                 _ => RedirectToAction(nameof(Login))
             };

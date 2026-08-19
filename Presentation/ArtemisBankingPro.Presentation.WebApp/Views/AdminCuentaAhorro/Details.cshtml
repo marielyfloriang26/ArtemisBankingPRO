@@ -1,0 +1,69 @@
+@model IEnumerable<ArtemisBankingPro.Domain.Entities.Transaccion>
+@{
+    ViewData["Title"] = "Detalles de Transacciones";
+    var cuenta = ViewBag.Cuenta as ArtemisBankingPro.Domain.Entities.CuentaAhorro;
+}
+
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Historial de Transacciones</h2>
+            @if (cuenta != null)
+            {
+                <p class="text-muted mb-0">Cuenta: <strong>@cuenta.NumeroCuenta</strong> | Cliente: <strong>@(cuenta.Cliente != null ? $"{cuenta.Cliente.Nombre} {cuenta.Cliente.Apellido}" : "")</strong> | Balance actual: <strong>RD$ @cuenta.Balance.ToString("N2")</strong></p>
+            }
+        </div>
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Volver atrás
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Fecha de la transacción</th>
+                            <th>Monto</th>
+                            <th>Tipo</th>
+                            <th>Origen</th>
+                            <th>Beneficiario</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>@item.FechaTransaccion.ToLocalTime().ToString("dd/MM/yyyy hh:mm tt")</td>
+                                    <td><strong>RD$ @item.Monto.ToString("N2")</strong></td>
+                                    <td>
+                                        <span class="badge @(item.TipoTransaccion == "CRÉDITO" ? "bg-success" : "bg-danger")">
+                                            @item.TipoTransaccion
+                                        </span>
+                                    </td>
+                                    <td>@item.Origen</td>
+                                    <td>@item.Beneficiario</td>
+                                    <td>
+                                        <span class="badge @(item.Estado == "APROBADA" ? "bg-success" : "bg-warning text-dark")">
+                                            @item.Estado
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">No hay transacciones registradas para esta cuenta.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
