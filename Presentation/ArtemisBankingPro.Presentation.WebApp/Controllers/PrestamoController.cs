@@ -23,7 +23,7 @@ public class PrestamoController : Controller
         if (estadoWasNull && string.IsNullOrEmpty(cedula))
             estado = "Activos";
 
-        var prestamos = await _prestamoService.GetAllPrestamosFilteredAsync(cedula, estadoWasNull ? "Todos" : estado);
+        var prestamos = await _prestamoService.GetAllPrestamosFilteredAsync(cedula, estadoWasNull ? "Todos" : estado!);
 
         if (!string.IsNullOrEmpty(cedula))
         {

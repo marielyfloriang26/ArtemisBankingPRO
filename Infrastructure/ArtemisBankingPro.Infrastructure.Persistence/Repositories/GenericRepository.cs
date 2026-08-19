@@ -25,8 +25,11 @@ public class GenericRepository<Entity> : IGenericRepository<Entity> where Entity
     public virtual async Task UpdateAsync(Entity entity, int id)
     {
         var entry = await _dbContext.Set<Entity>().FindAsync(id);
-        _dbContext.Entry(entry).CurrentValues.SetValues(entity);
-        await _dbContext.SaveChangesAsync();
+        if (entry != null)
+        {
+            _dbContext.Entry(entry).CurrentValues.SetValues(entity);
+            await _dbContext.SaveChangesAsync();
+        }
     }
 
     public virtual async Task DeleteAsync(Entity entity)
@@ -42,6 +45,6 @@ public class GenericRepository<Entity> : IGenericRepository<Entity> where Entity
 
     public virtual async Task<Entity> GetByIdAsync(int id)
     {
-        return await _dbContext.Set<Entity>().FindAsync(id);
+        return (await _dbContext.Set<Entity>().FindAsync(id))!;
     }
 }

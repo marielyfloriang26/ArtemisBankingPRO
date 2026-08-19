@@ -6,7 +6,7 @@ namespace ArtemisBankingPro.Application.ViewModels.AdminTarjeta
     {
         public DateTime FechaConsumo { get; set; }
         public decimal MontoConsumido { get; set; }
-        public string Comercio { get; set; }
-        public string EstadoConsumo { get; set; }
+        public string Comercio { get; set; } = null!;
+        public string EstadoConsumo { get; set; } = null!;
     }
 }

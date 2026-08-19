@@ -26,7 +26,7 @@ public class AdminTarjetaCreditoController : Controller
         if (estadoWasNull && string.IsNullOrEmpty(cedula))
             estado = "Activas";
 
-        var tarjetas = await _tarjetaService.GetAllTarjetasFilteredAsync(cedula, estadoWasNull ? "Todas" : estado);
+        var tarjetas = await _tarjetaService.GetAllTarjetasFilteredAsync(cedula, estadoWasNull ? "Todas" : estado!);
 
         if (!string.IsNullOrEmpty(cedula))
         {

@@ -15,7 +15,7 @@
                 <dd class="col-sm-9">@Model.CuentaOrigenId</dd>
 
                 <dt class="col-sm-3">Cuenta Destino:</dt>
-                <dd class="col-sm-9">@Model.CuentaDestinoId</dd>
+                <dd class="col-sm-9">@Model.NumeroCuentaDestino</dd>
 
                 <dt class="col-sm-3">Monto:</dt>
                 <dd class="col-sm-9">@Model.Monto.ToString("C")</dd>
@@ -25,7 +25,7 @@
 
     <form asp-action="TransferenciaConfirmar" method="post" class="mt-4">
         <input type="hidden" asp-for="CuentaOrigenId" />
-        <input type="hidden" asp-for="CuentaDestinoId" />
+        <input type="hidden" asp-for="NumeroCuentaDestino" />
         <input type="hidden" asp-for="Monto" />
 
         <button type="submit" class="btn btn-success">Confirmar</button>

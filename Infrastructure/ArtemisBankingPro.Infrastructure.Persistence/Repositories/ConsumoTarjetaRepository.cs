@@ -19,7 +19,7 @@ public class ConsumoTarjetaRepository : GenericRepository<ConsumoTarjeta>, ICons
 
     public async Task<List<ConsumoTarjeta>> GetByTarjetaIdAsync(int tarjetaId)
     {
-        return await _dbContext.ConsumosTarjetas
+        return await _dbContext.ConsumosTarjeta
             .Where(c => c.TarjetaId == tarjetaId)
             .ToListAsync();
     }

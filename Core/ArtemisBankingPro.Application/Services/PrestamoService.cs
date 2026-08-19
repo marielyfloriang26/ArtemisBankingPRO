@@ -211,8 +211,6 @@ public class PrestamoService : IPrestamoService
 
         var (error, cliente, cuentaPrincipal) = await ValidarElegibilidadClienteAsync(model.ClienteId);
         if (error != null) return error;
-        cliente = cliente!;
-        cuentaPrincipal = cuentaPrincipal!;
 
         string numeroPrestamo = await GenerarNumeroPrestamoAsync();
 
@@ -270,12 +268,12 @@ public class PrestamoService : IPrestamoService
             });
         }
 
-        cuentaPrincipal.Balance += model.MontoAprobado;
+        cuentaPrincipal!.Balance += model.MontoAprobado;
         await _cuentaRepo.UpdateAsync(cuentaPrincipal, cuentaPrincipal.Id);
 
         await _transaccionRepo.AddAsync(new Transaccion
         {
-            CuentaDestinoId = cuentaPrincipal.Id,
+            CuentaDestinoId = cuentaPrincipal!.Id,
             Monto = model.MontoAprobado,
             TipoTransaccion = "CRÉDITO",
             Origen = prestamo.NumeroPrestamo,
@@ -286,7 +284,7 @@ public class PrestamoService : IPrestamoService
         });
 
         try {
-            await _emailService.SendEmailAsync(cliente.Email, "Préstamo aprobado", $"Número: {prestamo.NumeroPrestamo}, Monto: {model.MontoAprobado}, Plazo: {model.PlazoMeses}, Tasa: {model.TasaInteresAnual}, Cuota: {cuotaMensual}");
+            await _emailService.SendEmailAsync(cliente!.Email!, "Préstamo aprobado", $"Número: {prestamo.NumeroPrestamo}, Monto: {model.MontoAprobado}, Plazo: {model.PlazoMeses}, Tasa: {model.TasaInteresAnual}, Cuota: {cuotaMensual}");
         } catch {
             return "El préstamo fue creado correctamente, pero no fue posible enviar el correo de notificación.";
         }

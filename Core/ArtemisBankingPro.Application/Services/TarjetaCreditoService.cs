@@ -218,7 +218,7 @@ namespace ArtemisBankingPro.Application.Services
                 NumeroTarjeta = EnmascararTarjeta(x.t.NumeroTarjeta),
                 Cliente = $"{x.c.Nombre} {x.c.Apellido}",
                 LimiteCredito = x.t.LimiteCredito,
-                FechaExpiracion = x.t.FechaExpiracion.ToString("MM/yy"),
+                FechaExpiracion = x.t.FechaExpiracion,
                 MontoAdeudado = x.t.MontoAdeudado,
                 Estado = x.t.Estado == "Activa" ? "Activa" : "Cancelada",
                 Cedula = x.c.Cedula
@@ -318,8 +318,8 @@ namespace ArtemisBankingPro.Application.Services
             try
             {
                 string ultimos4 = numTarjeta.Substring(12);
-                string exp = tarjeta.FechaExpiracion.ToString("MM/yy");
-                await _emailService.SendEmailAsync(cliente.Email, "Nueva tarjeta de crédito asignada", $"Tarjeta terminada en: {ultimos4}, Límite aprobado: {model.LimiteCredito}, Fecha de expiración: {exp}");
+                string exp = tarjeta.FechaExpiracion;
+                await _emailService.SendEmailAsync(cliente.Email!, "Nueva tarjeta de crédito asignada", $"Tarjeta terminada en: {ultimos4}, Límite aprobado: {model.LimiteCredito}, Fecha de expiración: {exp}");
             }
             catch
             {
@@ -369,7 +369,7 @@ namespace ArtemisBankingPro.Application.Services
             {
                 var cliente = await _usuarioRepo.GetByIdAsync(tarjeta.ClienteId);
                 string ultimos4 = tarjeta.NumeroTarjeta.Substring(12);
-                await _emailService.SendEmailAsync(cliente.Email, "Modificación de límite de tarjeta", $"El límite de su tarjeta de crédito terminada en {ultimos4} ha sido actualizado. Nuevo límite aprobado: {model.NuevoLimite}");
+                await _emailService.SendEmailAsync(cliente!.Email!, "Modificación de límite de tarjeta", $"El límite de su tarjeta de crédito terminada en {ultimos4} ha sido actualizado. Nuevo límite aprobado: {model.NuevoLimite}");
             }
             catch
             {

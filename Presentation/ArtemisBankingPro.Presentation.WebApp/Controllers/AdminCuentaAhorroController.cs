@@ -149,7 +149,7 @@ public class AdminCuentaAhorroController : Controller
             return RedirectToAction(nameof(SelectClient));
         }
 
-        var cliente = await _userManager.FindByIdAsync(clientId.ToString());
+        var cliente = await _userManager.FindByIdAsync(clientId.Value.ToString());
         if (cliente == null)
         {
             TempData["Error"] = "El cliente seleccionado no existe.";
@@ -215,7 +215,7 @@ public class AdminCuentaAhorroController : Controller
         } while (await _context.CuentasAhorro.AnyAsync(c => c.NumeroCuenta == numeroCuenta) ||
                  await _context.Prestamos.AnyAsync(p => p.Id.ToString() == numeroCuenta));
 
-        var adminId = int.Parse(_userManager.GetUserId(User));
+        var adminId = int.Parse(_userManager.GetUserId(User) ?? "0");
 
         var nuevaCuenta = new CuentaAhorro
         {

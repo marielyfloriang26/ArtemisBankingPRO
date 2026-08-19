@@ -167,7 +167,7 @@ public class AdminUserController : Controller
         try
         {
             string token = await _userManager.GenerateEmailConfirmationTokenAsync(nuevoUsuario);
-            string enlace = Url.Action("ActivarCuenta", "Account", new { userId = nuevoUsuario.Id, token = token }, Request.Scheme);
+            string? enlace = Url.Action("ActivarCuenta", "Account", new { userId = nuevoUsuario.Id, token = token }, Request.Scheme);
             string cuerpo = $"Hola {nombre},\n\nSu cuenta ha sido creada correctamente en Artemis Banking.\nPara activar su usuario, haga clic en el siguiente enlace:\n{enlace}\n\nSi usted no esperaba la creación de esta cuenta, ignore este mensaje.";
             
             await _emailService.SendEmailAsync(email, "Activación de cuenta", cuerpo);
@@ -186,7 +186,7 @@ public class AdminUserController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ToggleStatus(int id)
     {
-        var usuarioActualId = int.Parse(_userManager.GetUserId(User));
+        var usuarioActualId = int.Parse(_userManager.GetUserId(User) ?? "0");
         if (id == usuarioActualId)
         {
             TempData["Error"] = "No puede modificar el estado de su propia cuenta.";
@@ -210,7 +210,7 @@ public class AdminUserController : Controller
     // GET: AdminUser/Edit/5
     public async Task<IActionResult> Edit(int id)
     {
-        var usuarioActualId = int.Parse(_userManager.GetUserId(User));
+        var usuarioActualId = int.Parse(_userManager.GetUserId(User) ?? "0");
         if (id == usuarioActualId)
         {
             TempData["Error"] = "No puede editar su propia cuenta desde este módulo.";
@@ -232,7 +232,7 @@ public class AdminUserController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, string nombre, string apellido, string cedula, string email, string userName, string password, string confirmPassword, decimal? montoAdicional)
     {
-        var usuarioActualId = int.Parse(_userManager.GetUserId(User));
+        var usuarioActualId = int.Parse(_userManager.GetUserId(User) ?? "0");
         if (id == usuarioActualId)
         {
             TempData["Error"] = "No puede editar su propia cuenta desde este módulo.";

@@ -63,7 +63,9 @@ public class ProcessPaymentCommandHandler : IRequestHandler<ProcessPaymentComman
         if (tarjeta.CVC != requestHash)
             throw new Exception("400:El CVC es incorrecto.");
 
-        var [mesExpiracionStr, anoExpiracionStr] = tarjeta.FechaExpiracion.Split('/');
+        var expiracionParts = tarjeta.FechaExpiracion.Split('/');
+        var mesExpiracionStr = expiracionParts[0];
+        var anoExpiracionStr = expiracionParts[1];
         var anoExpiracion = 2000 + int.Parse(anoExpiracionStr);
         var mesExpiracion = int.Parse(mesExpiracionStr);
 
