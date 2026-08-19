@@ -185,7 +185,25 @@ namespace ArtemisBankingPro.Presentation.WebApp.Controllers
                 return RedirectToAction(nameof(Login));
             }
 
-            ModelState.AddModelError(string.Empty, "El enlace de restablecimiento ha expirado. Solicite un nuevo restablecimiento de contraseña.");
+            foreach (var error in result.Errors)
+            {
+                if (error.Code == "InvalidToken")
+                {
+                    if (user.EsActivo)
+                    {
+                        ModelState.AddModelError(string.Empty, "Este enlace de restablecimiento ya fue utilizado.");
+                    }
+                    else
+                    {
+                        ModelState.AddModelError(string.Empty, "El enlace de restablecimiento ha expirado. Solicite un nuevo restablecimiento de contraseña.");
+                    }
+                }
+                else
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+            }
+
             return View(model);
         }
 

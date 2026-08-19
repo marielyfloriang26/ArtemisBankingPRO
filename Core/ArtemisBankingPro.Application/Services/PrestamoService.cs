@@ -185,15 +185,15 @@ public class PrestamoService : IPrestamoService
     private async Task<(string? Error, Usuario? Cliente, CuentaAhorro? CuentaPrincipal)> ValidarElegibilidadClienteAsync(int clienteId)
     {
         var cliente = await _usuarioRepo.GetByIdAsync(clienteId);
-        if (cliente == null || !cliente.EsActivo) return ("El cliente seleccionado no existe o no está activo.", null, null);
+        if (cliente == null || !cliente.EsActivo) return ("El cliente debe estar activo.", null, null);
 
         var prestamosCliente = await _prestamoRepo.GetByClienteIdAsync(clienteId);
         var prestamoNoCompletado = prestamosCliente.FirstOrDefault(p => p.Estado != "Completado");
-        if (prestamoNoCompletado != null) return ("Este cliente ya tiene un préstamo activo asignado.", null, null);
+        if (prestamoNoCompletado != null) return ("El cliente no debe tener un préstamo activo actualmente.", null, null);
 
         var cuentas = await _cuentaRepo.GetByClienteIdAsync(clienteId);
         var cuentaPrincipal = cuentas.FirstOrDefault(c => c.TipoCuenta == "Principal" && c.Estado == "Activa");
-        if (cuentaPrincipal == null) return ("El cliente no tiene una cuenta de ahorro principal activa para recibir el desembolso del préstamo.", null, null);
+        if (cuentaPrincipal == null) return ("El cliente debe tener una cuenta de ahorro principal activa.", null, null);
 
         return (null, cliente, cuentaPrincipal);
     }
@@ -207,7 +207,7 @@ public class PrestamoService : IPrestamoService
     public async Task<string> AsignarPrestamoAsync(SavePrestamoViewModel model)
     {
         var plazosValidos = new List<int> { 6, 12, 18, 24, 30, 36, 42, 48, 54, 60 };
-        if (!plazosValidos.Contains(model.PlazoMeses)) return "El plazo seleccionado no es válido. Solo se permiten plazos en múltiplos de 6 hasta 60 meses.";
+        if (!plazosValidos.Contains(model.PlazoMeses)) return "El plazo debe ser uno de los valores permitidos.";
 
         var (error, cliente, cuentaPrincipal) = await ValidarElegibilidadClienteAsync(model.ClienteId);
         if (error != null) return error;
@@ -337,12 +337,12 @@ public class PrestamoService : IPrestamoService
     public async Task<string> EditTasaInteresAsync(EditTasaPrestamoViewModel model)
     {
         var p = await _prestamoRepo.GetByIdWithIncludesAsync(model.PrestamoId);
-        if (p == null) return "El préstamo seleccionado no existe.";
-        if (p.Estado != "Activo") return "Solo se puede modificar la tasa de interés de préstamos activos.";
+        if (p == null) return "El préstamo indicado no existe.";
+        if (p.Estado != "Activo") return "El préstamo debe estar activo.";
         if (model.NuevaTasaInteresAnual < 0) return "La tasa de interés anual no puede ser negativa.";
 
         var cuotasFuturas = p.Cuotas?.Where(c => c.FechaVencimiento > DateTime.UtcNow && c.EstadoPago == "Pendiente").OrderBy(c => c.NumeroCuota).ToList();
-        if (cuotasFuturas == null || !cuotasFuturas.Any()) return "No existen cuotas futuras pendientes para recalcular.";
+        if (cuotasFuturas == null || !cuotasFuturas.Any()) return "Debe existir al menos una cuota futura pendiente para poder recalcular.";
 
         p.TasaInteresAnual = model.NuevaTasaInteresAnual;
         await _prestamoRepo.UpdateAsync(p, p.Id);

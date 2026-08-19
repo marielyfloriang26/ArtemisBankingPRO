@@ -195,40 +195,8 @@ public class CommerceController : ControllerBase
         }
     };
 
-    [HttpPost("/api/users/commerce/{commerceId}")]
-    [Authorize(Roles = "Administrador")]
-    public async Task<IActionResult> CreateCommerceUser(string commerceId)
-    {
-        if (!int.TryParse(commerceId, out int id))
-            return BadRequest(new ErrorResponseDto("El comercio indicado no existe."));
+    // CreateCommerceUser endpoint has been moved to UserController
 
-        var comercio = await _comercioService.GetComercioDetailsAsync(id);
-        if (comercio == null)
-            return NotFound(new ErrorResponseDto("El comercio indicado no existe."));
 
-        if (comercio.UsuarioAsociado != null)
-            return Conflict(new ErrorResponseDto("Un comercio solo puede tener 1 usuario de API asociado."));
 
-        return StatusCode(501, new ErrorResponseDto("Fuera de alcance."));
-    }
-
-    [HttpPost("/api/payments")]
-    [Authorize(Roles = "Comercio")]
-    public async Task<IActionResult> ProcessHermesPayment()
-    {
-        // Enforce rule: inactive commerce cannot process payments
-        // We assume the commerce ID is linked to the authenticated user. For this out-of-scope stub, we just require a commerceId in the query for simplicity to enforce the rule, or check the claims.
-        var commerceIdClaim = User.FindFirst("CommerceId")?.Value;
-        if (!int.TryParse(commerceIdClaim, out int commerceId))
-            return BadRequest(new ErrorResponseDto("No se pudo identificar el comercio."));
-
-        var comercio = await _comercioService.GetComercioDetailsAsync(commerceId);
-        if (comercio == null)
-            return NotFound(new ErrorResponseDto("El comercio indicado no existe."));
-
-        if (!comercio.EsActivo)
-            return BadRequest(new ErrorResponseDto("Un comercio inactivo no puede procesar pagos mediante Hermes Pay."));
-
-        return StatusCode(501, new ErrorResponseDto("Fuera de alcance."));
-    }
 }

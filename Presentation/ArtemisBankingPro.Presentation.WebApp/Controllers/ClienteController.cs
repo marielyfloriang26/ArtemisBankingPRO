@@ -7,7 +7,7 @@ using System.Security.Claims; // Para obtener el ID del usuario
 
 namespace ArtemisBankingPro.Presentation.WebApp.Controllers
 {
-    // [Authorize(Roles = "Cliente")] // Descomentar esto cuando tengas Identity configurado
+    [Authorize(Roles = "Cliente")]
     public class ClienteController : Controller
     {
         private readonly ITarjetaCreditoService _tarjetaCreditoService;
@@ -21,11 +21,17 @@ namespace ArtemisBankingPro.Presentation.WebApp.Controllers
             _prestamoService = prestamoService;
         }
 
+        private int GetCurrentUserId()
+        {
+            var claim = User.FindFirst(ClaimTypes.NameIdentifier);
+            return int.TryParse(claim?.Value, out int userId) ? userId : 0;
+        }
+
         // MÉTODO HOME / LISTADO DE PRODUCTOS
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            int clienteId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            int clienteId = GetCurrentUserId();
 
             var cuentas = await _cuentaAhorroService.GetActiveCuentasByClientIdAsync(clienteId);
             
@@ -51,9 +57,7 @@ namespace ArtemisBankingPro.Presentation.WebApp.Controllers
         [HttpGet]
         public async Task<IActionResult> AvanceEfectivo()
         {
-            // TODO: Ajustar según cómo obtengas el ID del usuario logueado. 
-            // int clienteId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            int clienteId = 1; // <--- HARDCODED PARA PRUEBAS (Cámbialo luego)
+            int clienteId = GetCurrentUserId();
 
             var vm = new AvanceEfectivoViewModel();
             ViewBag.Tarjetas = await _tarjetaCreditoService.GetActiveCardsByClientIdAsync(clienteId);
@@ -65,7 +69,7 @@ namespace ArtemisBankingPro.Presentation.WebApp.Controllers
         [HttpPost]
         public async Task<IActionResult> AvanceEfectivo(AvanceEfectivoViewModel vm)
         {
-            int clienteId = 1; // <--- HARDCODED PARA PRUEBAS (Cámbialo luego)
+            int clienteId = GetCurrentUserId();
 
             if (!ModelState.IsValid)
             {
@@ -89,10 +93,10 @@ namespace ArtemisBankingPro.Presentation.WebApp.Controllers
             return View(vm);
         }
 
-                [HttpGet]
+        [HttpGet]
         public async Task<IActionResult> Transferencia()
         {
-            int clienteId = 1; // <--- HARDCODED PARA PRUEBAS
+            int clienteId = GetCurrentUserId();
 
             var vm = new TransferenciaViewModel();
             ViewBag.Cuentas = await _cuentaAhorroService.GetActiveCuentasByClientIdAsync(clienteId);
@@ -103,12 +107,26 @@ namespace ArtemisBankingPro.Presentation.WebApp.Controllers
         [HttpPost]
         public async Task<IActionResult> Transferencia(TransferenciaViewModel vm)
         {
-            int clienteId = 1; // <--- HARDCODED PARA PRUEBAS
+            int clienteId = GetCurrentUserId();
 
             if (!ModelState.IsValid)
             {
                 ViewBag.Cuentas = await _cuentaAhorroService.GetActiveCuentasByClientIdAsync(clienteId);
                 return View(vm);
+            }
+
+            return View("TransferenciaConfirmacion", vm);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> TransferenciaConfirmar(TransferenciaViewModel vm)
+        {
+            int clienteId = GetCurrentUserId();
+
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Cuentas = await _cuentaAhorroService.GetActiveCuentasByClientIdAsync(clienteId);
+                return View("Transferencia", vm);
             }
 
             var result = await _cuentaAhorroService.RealizarTransferenciaAsync(vm, clienteId);
@@ -121,7 +139,7 @@ namespace ArtemisBankingPro.Presentation.WebApp.Controllers
 
             ModelState.AddModelError(string.Empty, result.ErrorMessage);
             ViewBag.Cuentas = await _cuentaAhorroService.GetActiveCuentasByClientIdAsync(clienteId);
-            return View(vm);
+            return View("Transferencia", vm);
         }
     }
 }

@@ -16,11 +16,11 @@
         }
         else if (User.IsInRole("Cajero"))
         {
-            <a asp-controller="CajeroHome" asp-action="Index" class="btn btn-primary px-4">Volver al Home</a>
+            <a asp-controller="Cajero" asp-action="Home" class="btn btn-primary px-4">Volver al Home</a>
         }
         else if (User.IsInRole("Cliente"))
         {
-            <a asp-controller="ClienteHome" asp-action="Index" class="btn btn-primary px-4">Volver al Home</a>
+            <a asp-controller="Cliente" asp-action="Index" class="btn btn-primary px-4">Volver al Home</a>
         }
         else
         {

@@ -92,17 +92,26 @@ public class TransaccionCajeroService : ITransaccionCajeroService
             return ("El número de cuenta ingresado no corresponde a una cuenta válida.", null, null, null, 0m);
 
         if (!EsNumeroPrestamoValido(numeroPrestamo))
+        {
+            await RegistrarTransaccionRechazadaAsync(origen.Id, origen.NumeroCuenta, monto, numeroPrestamo, cajeroId);
             return ("El número de préstamo ingresado no corresponde a un préstamo válido.", null, null, null, 0m);
+        }
 
         var prestamo = await _prestamoRepo.GetByNumeroPrestamoAsync(numeroPrestamo);
         if (prestamo == null || prestamo.Estado != "Activo")
+        {
+            await RegistrarTransaccionRechazadaAsync(origen.Id, origen.NumeroCuenta, monto, numeroPrestamo, cajeroId);
             return ("El número de préstamo ingresado no corresponde a un préstamo válido.", null, null, null, 0m);
+        }
 
         var cuotas = await _cuotaRepo.GetByPrestamoIdAsync(prestamo.Id);
         var cuotasPendientes = cuotas.Where(c => c.EstadoPago != "Pagada").OrderBy(c => c.NumeroCuota).ToList();
 
         if (!cuotasPendientes.Any())
+        {
+            await RegistrarTransaccionRechazadaAsync(origen.Id, origen.NumeroCuenta, monto, prestamo.NumeroPrestamo, cajeroId);
             return ("El préstamo seleccionado no tiene cuotas pendientes de pago.", null, null, null, 0m);
+        }
 
         decimal montoPendienteReal = cuotasPendientes.Sum(c => c.SaldoPendiente);
         decimal montoEfectivo = Math.Min(monto, montoPendienteReal);
@@ -226,10 +235,16 @@ public class TransaccionCajeroService : ITransaccionCajeroService
 
         var destino = await _cuentaRepo.GetByNumeroCuentaAsync(numeroCuentaDestino);
         if (destino == null || destino.Estado != "Activa")
+        {
+            await RegistrarTransaccionRechazadaAsync(origen.Id, origen.NumeroCuenta, monto, numeroCuentaDestino, cajeroId);
             return ("El número de cuenta destino ingresado no corresponde a una cuenta válida.", null, null);
+        }
 
         if (origen.Id == destino.Id)
+        {
+            await RegistrarTransaccionRechazadaAsync(origen.Id, origen.NumeroCuenta, monto, destino.NumeroCuenta, cajeroId);
             return ("La cuenta origen y la cuenta destino no pueden ser la misma.", null, null);
+        }
 
         if (origen.Balance < monto)
         {

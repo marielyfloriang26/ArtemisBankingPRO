@@ -140,7 +140,7 @@ public class ComercioService : IComercioService
             return ComercioOperacionResultado.Fallo(ComercioOperacionEstado.NoEncontrado, "El comercio indicado no existe.");
 
         if (estado is null)
-            return ComercioOperacionResultado.Fallo(ComercioOperacionEstado.DatosInvalidos, "El campo status es obligatorio.");
+            return ComercioOperacionResultado.Fallo(ComercioOperacionEstado.DatosInvalidos, "Body inválido o campo status faltante.");
 
         comercio.EsActivo = estado.Value;
         await _comercioRepo.UpdateAsync(comercio, comercio.Id);
