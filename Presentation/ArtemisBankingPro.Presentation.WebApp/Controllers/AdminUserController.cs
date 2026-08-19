@@ -74,6 +74,12 @@ public class AdminUserController : Controller
             return RedirectToAction(nameof(Index));
         }
 
+        if (tipoUsuario != "Cliente" && montoInicial.HasValue && montoInicial > 0)
+        {
+            TempData["Error"] = "Solo los clientes pueden tener un monto inicial asignado.";
+            return RedirectToAction(nameof(Index));
+        }
+
         if (await _userManager.Users.AnyAsync(u => u.Cedula == cedula))
         {
             TempData["Error"] = "Ya existe un usuario registrado con esta cédula.";
@@ -219,6 +225,13 @@ public class AdminUserController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, string nombre, string apellido, string cedula, string email, string userName, string password, string confirmPassword, decimal? montoAdicional)
     {
+        var usuarioActualId = int.Parse(_userManager.GetUserId(User));
+        if (id == usuarioActualId)
+        {
+            TempData["Error"] = "No puede editar su propia cuenta desde este módulo.";
+            return RedirectToAction(nameof(Index));
+        }
+
         if (string.IsNullOrWhiteSpace(nombre) || string.IsNullOrWhiteSpace(apellido) || string.IsNullOrWhiteSpace(cedula) ||
             string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(userName))
         {

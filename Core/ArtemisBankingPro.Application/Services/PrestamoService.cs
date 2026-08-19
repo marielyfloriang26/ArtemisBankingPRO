@@ -187,8 +187,9 @@ public class PrestamoService : IPrestamoService
         var cliente = await _usuarioRepo.GetByIdAsync(clienteId);
         if (cliente == null || !cliente.EsActivo) return ("El cliente seleccionado no existe o no está activo.", null, null);
 
-        var prestamoActivo = await _prestamoRepo.GetPrestamoActivoByClienteIdAsync(clienteId);
-        if (prestamoActivo != null) return ("Este cliente ya tiene un préstamo activo asignado.", null, null);
+        var prestamosCliente = await _prestamoRepo.GetByClienteIdAsync(clienteId);
+        var prestamoNoCompletado = prestamosCliente.FirstOrDefault(p => p.Estado != "Completado");
+        if (prestamoNoCompletado != null) return ("Este cliente ya tiene un préstamo activo asignado.", null, null);
 
         var cuentas = await _cuentaRepo.GetByClienteIdAsync(clienteId);
         var cuentaPrincipal = cuentas.FirstOrDefault(c => c.TipoCuenta == "Principal" && c.Estado == "Activa");
@@ -205,6 +206,9 @@ public class PrestamoService : IPrestamoService
 
     public async Task<string> AsignarPrestamoAsync(SavePrestamoViewModel model)
     {
+        var plazosValidos = new List<int> { 6, 12, 18, 24, 30, 36, 42, 48, 54, 60 };
+        if (!plazosValidos.Contains(model.PlazoMeses)) return "El plazo seleccionado no es válido. Solo se permiten plazos en múltiplos de 6 hasta 60 meses.";
+
         var (error, cliente, cuentaPrincipal) = await ValidarElegibilidadClienteAsync(model.ClienteId);
         if (error != null) return error;
         cliente = cliente!;

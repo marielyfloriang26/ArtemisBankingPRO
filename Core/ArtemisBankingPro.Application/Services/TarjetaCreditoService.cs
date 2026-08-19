@@ -60,7 +60,7 @@ namespace ArtemisBankingPro.Application.Services
 
             // 2. Obtener la Cuenta de Ahorro destino
             var cuentas = await _cuentaRepository.GetAllAsync();
-            var cuenta = cuentas.FirstOrDefault(c => c.Id == model.CuentaAhorroDestinoId && c.ClienteId == clienteId && c.Estado == "Activa");
+            var cuenta = cuentas.FirstOrDefault(c => c.Id == model.CuentaAhorroDestinoId && c.ClienteId == clienteId && c.Estado == "Activa" && c.TipoCuenta == "Principal");
 
             if (cuenta == null)
             {

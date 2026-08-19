@@ -60,8 +60,13 @@ namespace ArtemisBankingPro.Presentation.WebApp.Controllers
                 return View(model);
             }
 
-            if (user.TipoUsuario == "Comercio" || 
-                (user.TipoUsuario != "Administrador" && user.TipoUsuario != "Cajero" && user.TipoUsuario != "Cliente"))
+            if (user.TipoUsuario == "Comercio")
+            {
+                ModelState.AddModelError(string.Empty, "Los usuarios con rol Comercio no tienen acceso a la aplicación web.");
+                return View(model);
+            }
+
+            if (user.TipoUsuario != "Administrador" && user.TipoUsuario != "Cajero" && user.TipoUsuario != "Cliente")
             {
                 ModelState.AddModelError(string.Empty, "Este usuario no tiene permisos para acceder a la aplicación web.");
                 return View(model);

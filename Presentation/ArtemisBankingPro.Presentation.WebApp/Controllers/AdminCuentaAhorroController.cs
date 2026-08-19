@@ -287,6 +287,12 @@ public class AdminCuentaAhorroController : Controller
             return RedirectToAction(nameof(Index));
         }
 
+        if (cuenta.Balance > 0)
+        {
+            TempData["Error"] = "No es posible cancelar una cuenta secundaria que tenga balance mayor a cero.";
+            return RedirectToAction(nameof(Index));
+        }
+
         return View(cuenta);
     }
 
@@ -314,48 +320,10 @@ public class AdminCuentaAhorroController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        var cuentaPrincipal = await _context.CuentasAhorro
-            .FirstOrDefaultAsync(c => c.ClienteId == cuenta.ClienteId && c.TipoCuenta == "Principal" && c.Estado == "Activa");
-
-        if (cuentaPrincipal == null)
-        {
-            TempData["Error"] = "No es posible cancelar la cuenta porque el cliente no tiene una cuenta principal activa para recibir los fondos.";
-            return RedirectToAction(nameof(Index));
-        }
-
         if (cuenta.Balance > 0)
         {
-            decimal montoTransferir = cuenta.Balance;
-
-            var transaccionDebito = new Transaccion
-            {
-                CuentaOrigenId = cuenta.Id,
-                CuentaDestinoId = cuentaPrincipal.Id,
-                Monto = montoTransferir,
-                TipoTransaccion = "DÉBITO",
-                Origen = cuenta.NumeroCuenta,
-                Beneficiario = cuentaPrincipal.NumeroCuenta,
-                Estado = "APROBADA",
-                FechaTransaccion = DateTime.UtcNow
-            };
-
-            var transaccionCredito = new Transaccion
-            {
-                CuentaOrigenId = cuenta.Id,
-                CuentaDestinoId = cuentaPrincipal.Id,
-                Monto = montoTransferir,
-                TipoTransaccion = "CRÉDITO",
-                Origen = cuenta.NumeroCuenta,
-                Beneficiario = cuentaPrincipal.NumeroCuenta,
-                Estado = "APROBADA",
-                FechaTransaccion = DateTime.UtcNow
-            };
-
-            cuentaPrincipal.Balance += montoTransferir;
-            cuenta.Balance = 0.00m;
-
-            _context.Transacciones.Add(transaccionDebito);
-            _context.Transacciones.Add(transaccionCredito);
+            TempData["Error"] = "No es posible cancelar una cuenta secundaria que tenga balance mayor a cero.";
+            return RedirectToAction(nameof(Index));
         }
 
         cuenta.Estado = "Cancelada";
