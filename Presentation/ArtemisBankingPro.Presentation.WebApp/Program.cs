@@ -9,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddApplicationLayer();
 builder.Services.AddPersistenceInfrastructure(builder.Configuration);
 builder.Services.AddSharedInfrastructure(builder.Configuration);
 
@@ -24,6 +25,7 @@ builder.Services.AddIdentity<Usuario, IdentityRole<int>>(options =>
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
+
 builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
 {
     options.TokenLifespan = TimeSpan.FromMinutes(30);
@@ -35,15 +37,13 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.AccessDeniedPath = "/Account/AccessDenied";
     options.Cookie.Name = "ArtemisBankingPro.Account";
     
-    // Requerimiento: Redirigir al Login mostrando el mensaje exacto si no está autenticado
+    // Redirigir al Login mostrando el mensaje exacto si no esta autenticado
     options.Events.OnRedirectToLogin = context =>
     {
         context.Response.Redirect(context.RedirectUri + (context.RedirectUri.Contains("?") ? "&" : "?") + "message=" + Uri.EscapeDataString("No tiene permiso para acceder a esta sección."));
         return Task.CompletedTask;
     };
 });
-
-builder.Services.AddApplicationLayer();
 
 builder.Services.AddHostedService<ArtemisBankingPro.Presentation.WebApp.BackgroundServices.CuotasAtrasadasBackgroundService>();
 

@@ -10,7 +10,9 @@ public static class ServiceRegistration
     public static void AddSharedInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         // TODO: Register shared infrastructure services (e.g. EmailService, UploadService)
+
         services.AddHostedService<DailyQuotaCheckService>();
+
         services.AddTransient<IEmailService, EmailService>();
     }
 }
