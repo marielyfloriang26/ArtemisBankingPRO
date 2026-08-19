@@ -29,4 +29,10 @@ public class CuentaAhorroRepository : GenericRepository<CuentaAhorro>, ICuentaAh
         return await _dbContext.CuentasAhorro
             .FirstOrDefaultAsync(c => c.NumeroCuenta == numeroCuenta);
     }
+
+    public async Task<CuentaAhorro?> GetCuentaPrincipalByUsuarioIdAsync(int usuarioId)
+    {
+        return await _dbContext.CuentasAhorro
+            .FirstOrDefaultAsync(c => c.ClienteId == usuarioId && c.TipoCuenta == "Principal");
+    }
 }

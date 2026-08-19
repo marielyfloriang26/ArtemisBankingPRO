@@ -1,3 +1,4 @@
+using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Presentation.WebApi.DTOs;
 using ArtemisBankingPro.Presentation.WebApi.DTOs.Account;
@@ -16,15 +17,17 @@ public class AccountController : ControllerBase
 {
     private readonly UserManager<Usuario> _userManager;
     private readonly IConfiguration _configuration;
+    private readonly IEmailService _emailService;
 
-    public AccountController(UserManager<Usuario> userManager, IConfiguration configuration)
+    public AccountController(UserManager<Usuario> userManager, IConfiguration configuration, IEmailService emailService)
     {
         _userManager = userManager;
         _configuration = configuration;
+        _emailService = emailService;
     }
 
-    [HttpPost("authenticate")]
-    public async Task<IActionResult> Authenticate([FromBody] AuthenticateRequestDto request)
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] AuthenticateRequestDto request)
     {
         if (!ModelState.IsValid)
             return BadRequest(new ErrorResponseDto("Datos faltantes o inválidos."));
@@ -72,5 +75,91 @@ public class AccountController : ControllerBase
         {
             Jwt = tokenHandler.WriteToken(token)
         });
+    }
+
+    [HttpPost("confirm")]
+    public async Task<IActionResult> Confirm([FromBody] ConfirmRequestDto request)
+    {
+        if (!ModelState.IsValid || string.IsNullOrWhiteSpace(request.Token))
+            return BadRequest(new ErrorResponseDto("Token vacío o inválido."));
+
+        // Como no recibimos userId, buscamos entre los usuarios inactivos
+        var inactiveUsers = _userManager.Users.Where(u => !u.EsActivo).ToList();
+        Usuario? matchedUser = null;
+
+        foreach (var u in inactiveUsers)
+        {
+            var isValid = await _userManager.VerifyUserTokenAsync(u, _userManager.Options.Tokens.EmailConfirmationTokenProvider, UserManager<Usuario>.ConfirmEmailTokenPurpose, request.Token);
+            if (isValid)
+            {
+                matchedUser = u;
+                break;
+            }
+        }
+
+        if (matchedUser == null)
+            return BadRequest(new ErrorResponseDto("Token inválido, utilizado o no asociado a un usuario válido."));
+
+        var result = await _userManager.ConfirmEmailAsync(matchedUser, request.Token);
+        if (result.Succeeded)
+        {
+            matchedUser.EsActivo = true;
+            await _userManager.UpdateAsync(matchedUser);
+            return NoContent();
+        }
+
+        return BadRequest(new ErrorResponseDto("Error al confirmar la cuenta."));
+    }
+
+    [HttpPost("get-reset-token")]
+    public async Task<IActionResult> GetResetToken([FromBody] GetResetTokenRequestDto request)
+    {
+        if (!ModelState.IsValid || string.IsNullOrWhiteSpace(request.UserName))
+            return BadRequest(new ErrorResponseDto("Datos inválidos."));
+
+        var user = await _userManager.FindByNameAsync(request.UserName);
+        if (user == null || string.IsNullOrWhiteSpace(user.Email))
+            return BadRequest(new ErrorResponseDto("Usuario no existe o no tiene correo registrado."));
+
+        if (user.TipoUsuario != "Administrador" && user.TipoUsuario != "Comercio")
+            return BadRequest(new ErrorResponseDto("Usuario no tiene un rol permitido."));
+
+        user.EsActivo = false;
+        await _userManager.UpdateAsync(user);
+
+        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+        var emailBody = $@"
+Hola {user.Nombre},
+Se ha generado un token para restablecer la contraseña de su cuenta.
+Token de restablecimiento:
+{token}
+Utilice este token en el endpoint correspondiente para completar el cambio de contraseña.
+Si usted no solicitó este cambio, ignore este mensaje.
+";
+        await _emailService.SendEmailAsync(user.Email, "Token de restablecimiento de contraseña", emailBody);
+
+        return NoContent();
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(new ErrorResponseDto("Faltan campos requeridos o las contraseñas no coinciden."));
+
+        var user = await _userManager.FindByIdAsync(request.UserId);
+        if (user == null)
+            return BadRequest(new ErrorResponseDto("Usuario no existe."));
+
+        var result = await _userManager.ResetPasswordAsync(user, request.Token, request.Password);
+        if (result.Succeeded)
+        {
+            user.EsActivo = true;
+            await _userManager.UpdateAsync(user);
+            return NoContent();
+        }
+
+        return BadRequest(new ErrorResponseDto("Token inválido o expirado."));
     }
 }

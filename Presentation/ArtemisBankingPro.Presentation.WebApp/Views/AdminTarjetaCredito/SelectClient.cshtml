@@ -1,0 +1,90 @@
+@model IEnumerable<ArtemisBankingPro.Application.ViewModels.Prestamos.ClienteElegibleViewModel>
+@{
+    ViewData["Title"] = "Seleccionar Cliente";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fa-solid fa-user-check text-info me-2"></i>Asignar Tarjeta de Crédito</h2>
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="fa-solid fa-arrow-left me-1"></i> Volver atrás
+        </a>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="alert alert-info mb-4 shadow-sm">
+        <h5 class="mb-0"><i class="fa-solid fa-chart-line me-2"></i> Monto promedio de deuda de clientes activos: <strong>@ViewBag.DeudaPromedio.ToString("C")</strong></h5>
+    </div>
+
+    <!-- Filtro por Cédula -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" asp-action="SelectClient" class="row g-3 align-items-center">
+                <div class="col-auto">
+                    <label for="cedula" class="col-form-label fw-bold">Buscar cliente por cédula:</label>
+                </div>
+                <div class="col-auto">
+                    <input type="text" name="cedula" id="cedula" class="form-control" value="@ViewBag.Cedula" placeholder="Ej: 001-0000000-1" />
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-secondary">Buscar</button>
+                    <a asp-action="SelectClient" class="btn btn-outline-secondary">Limpiar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Clientes -->
+    <div class="card shadow-sm">
+        <form asp-action="SelectClientPost" method="post">
+            <div class="card-body table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="text-center">Seleccionar</th>
+                            <th>Cédula</th>
+                            <th>Nombre y apellido</th>
+                            <th>Correo electrónico</th>
+                            <th>Monto total de deuda</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var cliente in Model)
+                            {
+                                <tr>
+                                    <td class="text-center">
+                                        <input type="radio" name="clienteId" value="@cliente.Id" class="form-check-input" required />
+                                    </td>
+                                    <td>@cliente.Cedula</td>
+                                    <td>@cliente.NombreCompleto</td>
+                                    <td>@cliente.Correo</td>
+                                    <td>@cliente.DeudaTotal.ToString("C")</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">No se encontraron clientes activos.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer text-end">
+                <button type="submit" class="btn btn-primary" @(Model == null || !Model.Any() ? "disabled" : "")>
+                    Siguiente paso <i class="fa-solid fa-arrow-right ms-1"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

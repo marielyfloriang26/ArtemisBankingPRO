@@ -68,6 +68,12 @@ public class AdminUserController : Controller
             return RedirectToAction(nameof(Index));
         }
 
+        if (string.IsNullOrWhiteSpace(tipoUsuario) || (tipoUsuario != "Administrador" && tipoUsuario != "Cajero" && tipoUsuario != "Cliente"))
+        {
+            TempData["Error"] = "El tipo de usuario debe ser Administrador, Cajero o Cliente.";
+            return RedirectToAction(nameof(Index));
+        }
+
         if (tipoUsuario == "Cliente" && montoInicial.HasValue && montoInicial < 0)
         {
             TempData["Error"] = "El monto inicial no puede ser negativo.";
@@ -124,8 +130,9 @@ public class AdminUserController : Controller
             Random rnd = new Random();
             do
             {
-                numeroCuenta = rnd.Next(100000000, 999999999).ToString();
-            } while (await _context.Set<CuentaAhorro>().AnyAsync(c => c.NumeroCuenta == numeroCuenta));
+                numeroCuenta = rnd.Next(100000000, 1000000000).ToString();
+            } while (await _context.Set<CuentaAhorro>().AnyAsync(c => c.NumeroCuenta == numeroCuenta) ||
+                     await _context.Set<Prestamo>().AnyAsync(p => p.NumeroPrestamo == numeroCuenta));
 
             var cuentaPrincipal = new CuentaAhorro
             {

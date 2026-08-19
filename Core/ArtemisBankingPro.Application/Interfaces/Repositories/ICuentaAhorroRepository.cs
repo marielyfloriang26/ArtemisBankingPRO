@@ -8,4 +8,5 @@ public interface ICuentaAhorroRepository : IGenericRepository<CuentaAhorro>
 {
     Task<List<CuentaAhorro>> GetByClienteIdAsync(int clienteId);
     Task<CuentaAhorro?> GetByNumeroCuentaAsync(string numeroCuenta);
+    Task<CuentaAhorro?> GetCuentaPrincipalByUsuarioIdAsync(int usuarioId);
 }

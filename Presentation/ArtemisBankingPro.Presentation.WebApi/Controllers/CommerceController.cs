@@ -89,6 +89,9 @@ public class CommerceController : ControllerBase
         if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int adminId))
             return Unauthorized(new ErrorResponseDto("Token ausente, inválido o expirado."));
 
+        if (request == null)
+            return BadRequest(new ErrorResponseDto("Datos faltantes o inválidos."));
+
         var model = new SaveComercioViewModel
         {
             Nombre = request.Name,
@@ -124,6 +127,9 @@ public class CommerceController : ControllerBase
     {
         if (!int.TryParse(id, out int comercioId))
             return NotFound(new ErrorResponseDto("El comercio indicado no existe."));
+
+        if (request == null)
+            return BadRequest(new ErrorResponseDto("Datos faltantes o inválidos."));
 
         var model = new SaveComercioViewModel
         {

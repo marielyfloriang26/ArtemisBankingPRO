@@ -193,7 +193,7 @@ public class PrestamoService : IPrestamoService
 
         var cuentas = await _cuentaRepo.GetByClienteIdAsync(clienteId);
         var cuentaPrincipal = cuentas.FirstOrDefault(c => c.TipoCuenta == "Principal" && c.Estado == "Activa");
-        if (cuentaPrincipal == null) return ("El cliente debe tener una cuenta de ahorro principal activa.", null, null);
+        if (cuentaPrincipal == null) return ("El cliente no tiene una cuenta de ahorro principal activa para recibir el desembolso del préstamo.", null, null);
 
         return (null, cliente, cuentaPrincipal);
     }
@@ -337,12 +337,12 @@ public class PrestamoService : IPrestamoService
     public async Task<string> EditTasaInteresAsync(EditTasaPrestamoViewModel model)
     {
         var p = await _prestamoRepo.GetByIdWithIncludesAsync(model.PrestamoId);
-        if (p == null) return "El préstamo indicado no existe.";
-        if (p.Estado != "Activo") return "El préstamo debe estar activo.";
+        if (p == null) return "El préstamo seleccionado no existe.";
+        if (p.Estado != "Activo") return "Solo se puede modificar la tasa de interés de préstamos activos.";
         if (model.NuevaTasaInteresAnual < 0) return "La tasa de interés anual no puede ser negativa.";
 
         var cuotasFuturas = p.Cuotas?.Where(c => c.FechaVencimiento > DateTime.UtcNow && c.EstadoPago == "Pendiente").OrderBy(c => c.NumeroCuota).ToList();
-        if (cuotasFuturas == null || !cuotasFuturas.Any()) return "Debe existir al menos una cuota futura pendiente para poder recalcular.";
+        if (cuotasFuturas == null || !cuotasFuturas.Any()) return "No existen cuotas futuras pendientes para recalcular.";
 
         p.TasaInteresAnual = model.NuevaTasaInteresAnual;
         await _prestamoRepo.UpdateAsync(p, p.Id);

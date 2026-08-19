@@ -306,7 +306,7 @@ namespace ArtemisBankingPro.Application.Services
                 NumeroTarjeta = numTarjeta,
                 LimiteCredito = model.LimiteCredito,
                 MontoAdeudado = 0,
-                FechaExpiracion = DateTime.UtcNow.AddYears(3),
+                FechaExpiracion = DateTime.UtcNow.AddYears(3).ToString("MM/yy"),
                 CVC = cvcHash,
                 AdminId = model.AdminId,
                 Estado = "Activa",

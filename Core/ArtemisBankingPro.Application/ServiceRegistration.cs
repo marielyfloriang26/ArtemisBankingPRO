@@ -10,6 +10,9 @@ public static class ServiceRegistration
     public static void AddApplicationLayer(this IServiceCollection services)
     {
         services.AddAutoMapper(Assembly.GetExecutingAssembly());
+        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
+        services.AddTransient(typeof(MediatR.IPipelineBehavior<,>), typeof(ArtemisBankingPro.Application.Behaviors.ValidationBehavior<,>));
+        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
         #region Services
 
         services.AddTransient<ArtemisBankingPro.Application.Interfaces.Services.IPrestamoService, ArtemisBankingPro.Application.Services.PrestamoService>();

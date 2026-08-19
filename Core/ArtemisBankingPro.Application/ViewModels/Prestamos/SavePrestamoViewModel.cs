@@ -7,7 +7,7 @@ public class SavePrestamoViewModel
 {
     public int? Id { get; set; }
 
-    [Required(ErrorMessage = "El cliente es obligatorio")]
+    [Required(ErrorMessage = "El cliente seleccionado es requerido.")]
     public int ClienteId { get; set; }
 
     [Required(ErrorMessage = "El monto a prestar debe ser mayor que cero.")]

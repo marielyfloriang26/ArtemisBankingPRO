@@ -141,12 +141,23 @@ public class AdminCuentaAhorroController : Controller
     }
 
     // GET: AdminCuentaAhorro/CreateSecondary/5
-    public async Task<IActionResult> CreateSecondary(int clientId)
+    public async Task<IActionResult> CreateSecondary(int? clientId)
     {
-        var cliente = await _userManager.FindByIdAsync(clientId.ToString());
-        if (cliente == null || !cliente.EsActivo)
+        if (clientId == null || clientId == 0)
         {
-            TempData["Error"] = "El cliente seleccionado no es válido o no está activo.";
+            TempData["Error"] = "Debe seleccionar un cliente para continuar.";
+            return RedirectToAction(nameof(SelectClient));
+        }
+
+        var cliente = await _userManager.FindByIdAsync(clientId.ToString());
+        if (cliente == null)
+        {
+            TempData["Error"] = "El cliente seleccionado no existe.";
+            return RedirectToAction(nameof(SelectClient));
+        }
+        if (!cliente.EsActivo)
+        {
+            TempData["Error"] = "Solo se puede asignar cuentas de ahorro a clientes activos.";
             return RedirectToAction(nameof(SelectClient));
         }
 
@@ -287,9 +298,12 @@ public class AdminCuentaAhorroController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        if (cuenta.Balance > 0)
+        var cuentaPrincipal = await _context.CuentasAhorro
+            .FirstOrDefaultAsync(c => c.ClienteId == cuenta.ClienteId && c.TipoCuenta == "Principal" && c.Estado == "Activa");
+
+        if (cuentaPrincipal == null)
         {
-            TempData["Error"] = "No es posible cancelar una cuenta secundaria que tenga balance mayor a cero.";
+            TempData["Error"] = "No es posible cancelar la cuenta porque el cliente no tiene una cuenta principal activa para recibir los fondos.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -320,10 +334,51 @@ public class AdminCuentaAhorroController : Controller
             return RedirectToAction(nameof(Index));
         }
 
+        var cuentaPrincipal = await _context.CuentasAhorro
+            .FirstOrDefaultAsync(c => c.ClienteId == cuenta.ClienteId && c.TipoCuenta == "Principal" && c.Estado == "Activa");
+
+        if (cuentaPrincipal == null)
+        {
+            TempData["Error"] = "No es posible cancelar la cuenta porque el cliente no tiene una cuenta principal activa para recibir los fondos.";
+            return RedirectToAction(nameof(Index));
+        }
+
         if (cuenta.Balance > 0)
         {
-            TempData["Error"] = "No es posible cancelar una cuenta secundaria que tenga balance mayor a cero.";
-            return RedirectToAction(nameof(Index));
+            decimal montoTransferencia = cuenta.Balance;
+            cuenta.Balance = 0;
+            cuentaPrincipal.Balance += montoTransferencia;
+
+            var adminIdStr = _userManager.GetUserId(User);
+            int adminId = 0;
+            int.TryParse(adminIdStr, out adminId);
+
+            var debito = new Transaccion
+            {
+                CuentaOrigenId = cuenta.Id,
+                Monto = montoTransferencia,
+                TipoTransaccion = "DÉBITO",
+                Origen = cuenta.NumeroCuenta,
+                Beneficiario = cuentaPrincipal.NumeroCuenta,
+                Estado = "APROBADA",
+                UsuarioResponsableId = adminId,
+                FechaTransaccion = DateTime.UtcNow
+            };
+
+            var credito = new Transaccion
+            {
+                CuentaDestinoId = cuentaPrincipal.Id,
+                Monto = montoTransferencia,
+                TipoTransaccion = "CRÉDITO",
+                Origen = cuenta.NumeroCuenta,
+                Beneficiario = cuentaPrincipal.NumeroCuenta,
+                Estado = "APROBADA",
+                UsuarioResponsableId = adminId,
+                FechaTransaccion = DateTime.UtcNow
+            };
+
+            _context.Transacciones.Add(debito);
+            _context.Transacciones.Add(credito);
         }
 
         cuenta.Estado = "Cancelada";

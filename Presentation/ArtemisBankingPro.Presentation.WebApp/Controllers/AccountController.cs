@@ -60,12 +60,6 @@ namespace ArtemisBankingPro.Presentation.WebApp.Controllers
                 return View(model);
             }
 
-            if (user.TipoUsuario == "Comercio")
-            {
-                ModelState.AddModelError(string.Empty, "Los usuarios con rol Comercio no tienen acceso a la aplicación web.");
-                return View(model);
-            }
-
             if (user.TipoUsuario != "Administrador" && user.TipoUsuario != "Cajero" && user.TipoUsuario != "Cliente")
             {
                 ModelState.AddModelError(string.Empty, "Este usuario no tiene permisos para acceder a la aplicación web.");
@@ -135,6 +129,11 @@ namespace ArtemisBankingPro.Presentation.WebApp.Controllers
             if (string.IsNullOrEmpty(user.Email))
             {
                 return Json(new { success = false, message = "Este usuario no tiene un correo electrónico registrado. No es posible enviar la solicitud de restablecimiento." });
+            }
+
+            if (user.TipoUsuario != "Administrador" && user.TipoUsuario != "Cajero" && user.TipoUsuario != "Cliente")
+            {
+                return Json(new { success = false, message = "Este usuario no tiene permisos para acceder a la aplicación web." });
             }
 
             // Desactivar temporalmente la cuenta del usuario
