@@ -1,14 +1,23 @@
+using ArtemisBankingPro.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
-namespace ArtemisBankingPro.Presentation.WebApp.Controllers
+namespace ArtemisBankingPro.Web.Controllers;
+
+[Authorize(Roles = "Administrador")]
+public class AdminHomeController : Controller
 {
-    [Authorize(Roles = "Administrador")]
-    public class AdminHomeController : Controller
+    private readonly IAdminService _adminService;
+
+    public AdminHomeController(IAdminService adminService)
     {
-        public IActionResult Index()
-        {
-            return View();
-        }
+        _adminService = adminService;
+    }
+
+    public async Task<IActionResult> Index()
+    {
+        var model = await _adminService.GetDashboardIndicatorsAsync();
+        return View(model);
     }
 }

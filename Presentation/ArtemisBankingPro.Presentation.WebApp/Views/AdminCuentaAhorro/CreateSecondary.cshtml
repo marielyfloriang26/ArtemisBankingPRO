@@ -1,0 +1,43 @@
+@{
+    ViewData["Title"] = "Configurar Cuenta Secundaria";
+    var cliente = ViewBag.Cliente as ArtemisBankingPro.Domain.Entities.Usuario;
+}
+
+<div class="container py-5" style="max-width: 600px;">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Configuración de Cuenta Secundaria</h4>
+        </div>
+        <div class="card-body p-4">
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger" role="alert">
+                    @TempData["Error"]
+                </div>
+            }
+
+            @if (cliente != null)
+            {
+                <div class="mb-3 p-3 bg-light rounded">
+                    <strong>Cliente Seleccionado:</strong> @cliente.Nombre @cliente.Apellido <br />
+                    <strong>Cédula:</strong> @cliente.Cedula
+                </div>
+            }
+
+            <form asp-action="CreateSecondary" method="post">
+                <input type="hidden" name="clienteId" value="@cliente?.Id" />
+
+                <div class="mb-3">
+                    <label for="balanceInicial" class="form-label">Balance inicial (RD$)</label>
+                    <input type="number" step="0.01" min="0" class="form-control" id="balanceInicial" name="balanceInicial" value="0.00" required />
+                    <div class="form-text">Puede ser RD$0.00 o superior. Si es mayor a cero, se registrará un crédito de apertura.</div>
+                </div>
+
+                <div class="d-flex justify-content-between mt-4">
+                    <a asp-action="SelectClient" class="btn btn-secondary">Volver atrás</a>
+                    <button type="submit" class="btn btn-success">Asignar cuenta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
