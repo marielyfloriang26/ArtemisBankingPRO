@@ -1,5 +1,6 @@
 using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Application.Interfaces.Services;
+using ArtemisBankingPro.Application.ViewModels.Cajero;
 using ArtemisBankingPro.Application.ViewModels.Transacciones;
 using ArtemisBankingPro.Domain.Entities;
 using System;
@@ -19,6 +20,7 @@ public class TransaccionCajeroService : ITransaccionCajeroService
     private readonly ICuotaPrestamoRepository _cuotaRepo;
     private readonly ITransaccionRepository _transaccionRepo;
     private readonly IUsuarioRepository _usuarioRepo;
+    private readonly ITarjetaCreditoRepository _tarjetaRepo;
     private readonly IEmailService _emailService;
 
     public TransaccionCajeroService(
@@ -27,7 +29,7 @@ public class TransaccionCajeroService : ITransaccionCajeroService
         ICuotaPrestamoRepository cuotaRepo,
         ITransaccionRepository transaccionRepo,
         IUsuarioRepository usuarioRepo,
-        IEmailService emailService)
+        IEmailService emailService, ITarjetaCreditoRepository tarjetaCreditoRepository)
     {
         _cuentaRepo = cuentaRepo;
         _prestamoRepo = prestamoRepo;
@@ -35,6 +37,7 @@ public class TransaccionCajeroService : ITransaccionCajeroService
         _transaccionRepo = transaccionRepo;
         _usuarioRepo = usuarioRepo;
         _emailService = emailService;
+        _tarjetaRepo = tarjetaCreditoRepository;
     }
 
     #region Helpers
@@ -334,4 +337,216 @@ public class TransaccionCajeroService : ITransaccionCajeroService
     }
 
     #endregion
+    #region Depósito
+
+private async Task<(string? error, CuentaAhorro? cuenta)> ValidarDepositoAsync(string numeroCuenta, decimal monto)
+{
+    var cuenta = await _cuentaRepo.GetByNumeroCuentaAsync(numeroCuenta);
+    if (cuenta == null || cuenta.Estado != "Activa")
+        return ("El número de cuenta ingresado no corresponde a una cuenta válida.", null);
+
+    return (null, cuenta);
+}
+
+public async Task<(string? error, DepositoViewModel? confirm)> PreviewDepositoAsync(int cajeroId, DepositoViewModel model)
+{
+    var (error, cuenta) = await ValidarDepositoAsync(model.NumeroCuenta, model.Monto);
+    if (error != null) return (error, null);
+
+    var titular = await _usuarioRepo.GetByIdAsync(cuenta!.ClienteId);
+    model.CuentaId = cuenta.Id;
+    model.TitularCuenta = titular != null ? NombreCompleto(titular) : "";
+    return (null, model);
+}
+
+public async Task<OperationResultViewModel> EjecutarDepositoAsync(int cajeroId, DepositoViewModel model)
+{
+    var (error, cuenta) = await ValidarDepositoAsync(model.NumeroCuenta, model.Monto);
+    if (error != null) return new OperationResultViewModel { Success = false, Message = error };
+
+    cuenta!.Balance += model.Monto;
+    await _cuentaRepo.UpdateAsync(cuenta, cuenta.Id);
+
+    var fecha = DateTime.UtcNow;
+    await _transaccionRepo.AddAsync(new Transaccion
+    {
+        CuentaDestinoId = cuenta.Id,
+        Monto = model.Monto,
+        TipoTransaccion = "CRÉDITO",
+        Origen = "DEPÓSITO",
+        Beneficiario = cuenta.NumeroCuenta,
+        Estado = "APROBADA",
+        UsuarioResponsableId = cajeroId,
+        FechaTransaccion = fecha
+    });
+
+    var titular = await _usuarioRepo.GetByIdAsync(cuenta.ClienteId);
+    bool correoOk = await EnviarCorreoSeguroAsync(titular?.Email,
+        $"Depósito realizado a su cuenta {UltimosDigitos(cuenta.NumeroCuenta)}",
+        $"Se ha realizado un depósito a su cuenta terminada en {UltimosDigitos(cuenta.NumeroCuenta)}. Monto depositado: {FormatoMonto(model.Monto)}. Fecha y hora: {fecha}.");
+
+    return new OperationResultViewModel
+    {
+        Success = true,
+        CorreoFallido = !correoOk,
+        Message = correoOk ? "Depósito realizado correctamente." : "El depósito fue realizado correctamente, pero no fue posible enviar el correo de notificación."
+    };
+}
+
+#endregion
+
+#region Retiro
+
+private async Task<(string? error, CuentaAhorro? cuenta)> ValidarRetiroAsync(int cajeroId, string numeroCuenta, decimal monto)
+{
+    var cuenta = await _cuentaRepo.GetByNumeroCuentaAsync(numeroCuenta);
+    if (cuenta == null || cuenta.Estado != "Activa")
+        return ("El número de cuenta ingresado no corresponde a una cuenta válida.", null);
+
+    if (cuenta.Balance < monto)
+    {
+        await RegistrarTransaccionRechazadaAsync(cuenta.Id, cuenta.NumeroCuenta, monto, "RETIRO", cajeroId);
+        return ("El monto ingresado excede el saldo disponible de la cuenta.", null);
+    }
+
+    return (null, cuenta);
+}
+
+public async Task<(string? error, RetiroViewModel? confirm)> PreviewRetiroAsync(int cajeroId, RetiroViewModel model)
+{
+    var (error, cuenta) = await ValidarRetiroAsync(cajeroId, model.NumeroCuenta, model.Monto);
+    if (error != null) return (error, null);
+
+    var titular = await _usuarioRepo.GetByIdAsync(cuenta!.ClienteId);
+    model.CuentaId = cuenta.Id;
+    model.TitularCuenta = titular != null ? NombreCompleto(titular) : "";
+    return (null, model);
+}
+
+public async Task<OperationResultViewModel> EjecutarRetiroAsync(int cajeroId, RetiroViewModel model)
+{
+    var (error, cuenta) = await ValidarRetiroAsync(cajeroId, model.NumeroCuenta, model.Monto);
+    if (error != null) return new OperationResultViewModel { Success = false, Message = error };
+
+    cuenta!.Balance -= model.Monto;
+    await _cuentaRepo.UpdateAsync(cuenta, cuenta.Id);
+
+    var fecha = DateTime.UtcNow;
+    await _transaccionRepo.AddAsync(new Transaccion
+    {
+        CuentaOrigenId = cuenta.Id,
+        Monto = model.Monto,
+        TipoTransaccion = "DÉBITO",
+        Origen = cuenta.NumeroCuenta,
+        Beneficiario = "RETIRO",
+        Estado = "APROBADA",
+        UsuarioResponsableId = cajeroId,
+        FechaTransaccion = fecha
+    });
+
+    var titular = await _usuarioRepo.GetByIdAsync(cuenta.ClienteId);
+    bool correoOk = await EnviarCorreoSeguroAsync(titular?.Email,
+        $"Retiro realizado desde su cuenta {UltimosDigitos(cuenta.NumeroCuenta)}",
+        $"Se ha realizado un retiro desde su cuenta terminada en {UltimosDigitos(cuenta.NumeroCuenta)}. Monto retirado: {FormatoMonto(model.Monto)}. Fecha y hora: {fecha}.");
+
+    return new OperationResultViewModel
+    {
+        Success = true,
+        CorreoFallido = !correoOk,
+        Message = correoOk ? "Retiro realizado correctamente." : "El retiro fue realizado correctamente, pero no fue posible enviar el correo de notificación."
+    };
+}
+
+#endregion
+
+#region Pago a tarjeta de crédito (Cajero)
+
+private async Task<(string? error, CuentaAhorro? origen, TarjetaCredito? tarjeta, decimal montoEfectivo)> ValidarPagoTarjetaCajeroAsync(int cajeroId, string numeroCuentaOrigen, string numeroTarjeta, decimal monto)
+{
+    var origen = await _cuentaRepo.GetByNumeroCuentaAsync(numeroCuentaOrigen);
+    if (origen == null || origen.Estado != "Activa")
+        return ("El número de cuenta ingresado no corresponde a una cuenta válida.", null, null, 0m);
+
+    var tarjeta = await _tarjetaRepo.GetByNumeroTarjetaAsync(numeroTarjeta);
+    if (tarjeta == null || tarjeta.Estado != "Activa")
+        return ("El número de tarjeta ingresado no corresponde a una tarjeta válida.", null, null, 0m);
+
+    if (tarjeta.MontoAdeudado <= 0)
+        return ("La tarjeta seleccionada no tiene deuda pendiente.", null, null, 0m);
+
+    decimal montoEfectivo = Math.Min(monto, tarjeta.MontoAdeudado);
+
+    if (origen.Balance < montoEfectivo)
+    {
+        await RegistrarTransaccionRechazadaAsync(origen.Id, origen.NumeroCuenta, monto, UltimosDigitos(tarjeta.NumeroTarjeta), cajeroId);
+        return ("El monto ingresado excede el saldo disponible de la cuenta.", null, null, 0m);
+    }
+
+    return (null, origen, tarjeta, montoEfectivo);
+}
+
+public async Task<(string? error, PagoTarjetaViewModel? confirm)> PreviewPagoTarjetaCajeroAsync(int cajeroId, PagoTarjetaViewModel model)
+{
+    var (error, origen, tarjeta, montoEfectivo) = await ValidarPagoTarjetaCajeroAsync(cajeroId, model.NumeroCuenta, model.NumeroTarjeta, model.Monto);
+    if (error != null) return (error, null);
+
+    var titularCuenta = await _usuarioRepo.GetByIdAsync(origen!.ClienteId);
+    var titularTarjeta = await _usuarioRepo.GetByIdAsync(tarjeta!.ClienteId);
+
+    model.CuentaOrigenId = origen.Id;
+    model.TitularCuentaOrigen = titularCuenta != null ? NombreCompleto(titularCuenta) : "";
+    model.TarjetaId = tarjeta.Id;
+    model.TitularTarjeta = titularTarjeta != null ? NombreCompleto(titularTarjeta) : "";
+    model.MontoEfectivo = montoEfectivo;
+    return (null, model);
+}
+
+public async Task<OperationResultViewModel> EjecutarPagoTarjetaCajeroAsync(int cajeroId, PagoTarjetaViewModel model)
+{
+    var (error, origen, tarjeta, montoEfectivo) = await ValidarPagoTarjetaCajeroAsync(cajeroId, model.NumeroCuenta, model.NumeroTarjeta, model.Monto);
+    if (error != null) return new OperationResultViewModel { Success = false, Message = error };
+
+    origen!.Balance -= montoEfectivo;
+    await _cuentaRepo.UpdateAsync(origen, origen.Id);
+
+    tarjeta!.MontoAdeudado -= montoEfectivo;
+    if (tarjeta.MontoAdeudado < 0) tarjeta.MontoAdeudado = 0m;
+    await _tarjetaRepo.UpdateAsync(tarjeta, tarjeta.Id);
+
+    var fecha = DateTime.UtcNow;
+    await _transaccionRepo.AddAsync(new Transaccion
+    {
+        CuentaOrigenId = origen.Id,
+        Monto = montoEfectivo,
+        TipoTransaccion = "DÉBITO",
+        Origen = origen.NumeroCuenta,
+        Beneficiario = UltimosDigitos(tarjeta.NumeroTarjeta),
+        Estado = "APROBADA",
+        UsuarioResponsableId = cajeroId,
+        FechaTransaccion = fecha
+    });
+
+    var titularTarjeta = await _usuarioRepo.GetByIdAsync(tarjeta.ClienteId);
+    bool correoOk = await EnviarCorreoSeguroAsync(titularTarjeta?.Email,
+        $"Pago realizado a la tarjeta {UltimosDigitos(tarjeta.NumeroTarjeta)}",
+        $"Se ha realizado un pago a su tarjeta de crédito terminada en {UltimosDigitos(tarjeta.NumeroTarjeta)}. Monto pagado: {FormatoMonto(montoEfectivo)}. Cuenta origen terminada en: {UltimosDigitos(origen.NumeroCuenta)}. Fecha y hora: {fecha}.");
+
+    if (origen.ClienteId != tarjeta.ClienteId)
+    {
+        var titularCuenta = await _usuarioRepo.GetByIdAsync(origen.ClienteId);
+        bool correoCuentaOk = await EnviarCorreoSeguroAsync(titularCuenta?.Email,
+            $"Débito realizado desde su cuenta {UltimosDigitos(origen.NumeroCuenta)}",
+            $"Se ha debitado {FormatoMonto(montoEfectivo)} de su cuenta terminada en {UltimosDigitos(origen.NumeroCuenta)} para pagar la tarjeta terminada en {UltimosDigitos(tarjeta.NumeroTarjeta)}. Fecha y hora: {fecha}.");
+        correoOk &= correoCuentaOk;
+    }
+
+    return new OperationResultViewModel
+    {
+        Success = true,
+        CorreoFallido = !correoOk,
+        Message = correoOk ? "Pago realizado correctamente." : "El pago fue realizado correctamente, pero no fue posible enviar el correo de notificación."
+    };
+}
+
+#endregion
 }
