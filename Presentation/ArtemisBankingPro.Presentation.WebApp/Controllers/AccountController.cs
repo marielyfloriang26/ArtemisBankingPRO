@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Application.ViewModels.Account;
+using ArtemisBankingPro.Application.Interfaces.Services;
 
 namespace ArtemisBankingPro.Presentation.WebApp.Controllers
 {
@@ -10,11 +11,16 @@ namespace ArtemisBankingPro.Presentation.WebApp.Controllers
     {
         private readonly UserManager<Usuario> _userManager;
         private readonly SignInManager<Usuario> _signInManager;
+        private readonly IEmailService _emailService;
 
-        public AccountController(UserManager<Usuario> userManager, SignInManager<Usuario> signInManager)
+        public AccountController(
+            UserManager<Usuario> userManager, 
+            SignInManager<Usuario> signInManager, 
+            IEmailService emailService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
+            _emailService = emailService;
         }
 
         [HttpGet]
@@ -141,7 +147,21 @@ namespace ArtemisBankingPro.Presentation.WebApp.Controllers
             await _userManager.UpdateAsync(user);
 
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-            // Aquí puedes integrar el envío del correo electrónico
+            
+            // Construir el enlace absoluto para el restablecimiento
+            var callbackUrl = Url.Action("NuevaContrasena", "Account", 
+                new { token = token, email = user.Email }, protocol: Request.Scheme);
+
+            // Enviar correo electrónico con el formato requerido
+            string asunto = "Restablecimiento de contraseña";
+            string cuerpo = $"Hola {user.Nombre},<br><br>" +
+                            $"Hemos recibido una solicitud para restablecer la contraseña de su cuenta.<br>" +
+                            $"Para continuar, haga clic en el siguiente enlace:<br>" +
+                            $"<a href='{callbackUrl}'>Restablecer Contraseña</a><br><br>" +
+                            $"Este enlace tendrá una vigencia de 30 minutos.<br>" +
+                            $"Si usted no solicitó este cambio, ignore este mensaje.";
+
+            await _emailService.SendEmailAsync(user.Email, asunto, cuerpo);
 
             return Json(new { success = true, message = "Se ha enviado un enlace de restablecimiento de contraseña al correo electrónico registrado." });
         }
