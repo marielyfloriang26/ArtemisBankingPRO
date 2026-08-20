@@ -82,8 +82,8 @@ namespace ArtemisBankingPro.Presentation.WebApp.Controllers
 
             if (result.Success)
             {
-                TempData["SuccessMessage"] = "Avance de efectivo realizado con éxito.";
-                return RedirectToAction("AvanceEfectivo"); // O redirigir al Home del cliente
+                TempData["SuccessMessage"] = string.IsNullOrEmpty(result.ErrorMessage) ? "Avance de efectivo realizado con éxito." : result.ErrorMessage; // mensaje warning si fallo el correo
+                return RedirectToAction("Index"); // redirigir al Home del cliente
             }
 
             ModelState.AddModelError(string.Empty, result.ErrorMessage);

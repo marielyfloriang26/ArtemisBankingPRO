@@ -125,8 +125,26 @@ namespace ArtemisBankingPro.Application.Services
                 _logger.LogInformation("Avance de efectivo exitoso. Cliente: {ClienteId}, Tarjeta: {Tarjeta}, Cuenta Destino: {CuentaId}, Monto Solicitado: {Monto}, Interés: {Interes}", 
                     clienteId, tarjetaOculta, cuenta.Id, model.Monto, montoInteres);
 
-                // (Opcional) Enviar correo
-                // await _emailService.SendEmailAsync("correo@cliente.com", "Avance de Efectivo Realizado", $"Se ha realizado un avance de efectivo por {model.Monto} a su cuenta.");
+                                // Enviar correo de notificación del avance de efectivo
+                var cliente = await _usuarioRepo.GetByIdAsync(clienteId);
+                string ultimos4Tarjeta = tarjeta.NumeroTarjeta.Substring(12);
+                string ultimos4Cuenta = cuenta.NumeroCuenta.Substring(cuenta.NumeroCuenta.Length - 4);
+
+                string asunto = $"Avance de efectivo desde la tarjeta {ultimos4Tarjeta}";
+                string cuerpo = $"Hola {cliente!.Nombre},\n\n" + $"Se ha realizado un avance de efectivo desde su tarjeta terminada en {ultimos4Tarjeta}.\n" + $"Monto depositado: RD${model.Monto}\n" +
+                $"Interés aplicado: RD${montoInteres}\n" +
+                $"Total cargado a la tarjeta: RD${montoTotalAdeudar}\n" +
+                $"Cuenta destino terminada en: {ultimos4Cuenta}\n" +
+                $"Fecha y hora: {DateTime.Now}\n\n" + $"Si usted no reconoce esta operación, comuníquese con la entidad bancaria.";
+
+                try
+                {
+                    await _emailService.SendEmailAsync(cliente.Email!, asunto, cuerpo);
+                }
+                catch
+                {
+                    return (true, "El avance fue realizado correctamente, pero no fue posible enviar el correo de notificación.");
+                }
 
                 return (true, string.Empty);
             }

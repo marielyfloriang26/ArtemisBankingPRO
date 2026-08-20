@@ -2,6 +2,7 @@ using AutoMapper;
 using ArtemisBankingPro.Application.ViewModels.Cliente;
 using ArtemisBankingPro.Domain.Entities;
 
+
 namespace ArtemisBankingPro.Application.Mappings;
 
 public class GeneralProfile : Profile
@@ -10,5 +11,9 @@ public class GeneralProfile : Profile
     {
         CreateMap<CuentaAhorro, CuentaAhorroViewModel>()
             .ReverseMap();
+
+        CreateMap<TarjetaCredito, TarjetaCreditoViewModel>()
+            .ReverseMap();
+
     }
 }
