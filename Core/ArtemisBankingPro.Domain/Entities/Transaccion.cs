@@ -12,6 +12,7 @@ public class Transaccion
     public string Origen { get; set; } = null!; // DEPÓSITO, RETIRO, AVANCE, TRANSFERENCIA, nº préstamo, nº tarjeta
     public string Beneficiario { get; set; } = null!; // DEPÓSITO, RETIRO, nº cuenta destino, nº préstamo, nº tarjeta
     public string Estado { get; set; } = "APROBADA"; // APROBADA o RECHAZADA
+    public string? TipoOperacion { get; set; } 
     public int? UsuarioResponsableId { get; set; } // Cajero o Cliente autenticado que inició la transacción
     public DateTime FechaTransaccion { get; set; } = DateTime.UtcNow;
 

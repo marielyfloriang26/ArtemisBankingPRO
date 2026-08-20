@@ -15,6 +15,7 @@ namespace ArtemisBankingPro.Application.Interfaces.Services
 
         Task<(bool Success, string ErrorMessage)> RealizarRetiroAsync(ViewModels.Cajero.RetiroViewModel model, int cajeroId);
 
+
         // api
         Task<(List<CuentaAhorro> Cuentas, int TotalRegistros)> GetAllPaginatedAsync(int page, int pageSize, string? identification, string status, string type);
 
@@ -23,5 +24,8 @@ namespace ArtemisBankingPro.Application.Interfaces.Services
         Task<(CuentaAhorro? Cuenta, List<Transaccion> Transacciones, int TotalRegistros)> GetTransaccionesByAccountAsync(string numeroCuenta, int page, int pageSize);
 
         Task<(bool Success, string ErrorMessage)> CancelSecondaryAccountAsync(string numeroCuenta, int adminId);
+
+        Task<List<ArtemisBankingPro.Application.ViewModels.Cliente.TransaccionDetalleViewModel>> GetTransaccionesByCuentaIdAsync(int cuentaId, int clienteId);
+
     }
 }

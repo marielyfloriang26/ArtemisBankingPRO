@@ -15,17 +15,22 @@ namespace ArtemisBankingPro.Application.Services
         private readonly IGenericRepository<CuentaAhorro> _cuentaRepository;
         private readonly IGenericRepository<Transaccion> _transaccionRepository;
         private readonly IMapper _mapper;
+        private readonly IUsuarioRepository _usuarioRepo;
+        private readonly IEmailService _emailService;
         private readonly ILogger<CuentaAhorroService> _logger;
         public CuentaAhorroService(
             IGenericRepository<CuentaAhorro> cuentaRepository,
             IGenericRepository<Transaccion> transaccionRepository,
             IMapper mapper,
-            ILogger<CuentaAhorroService> logger)
+            ILogger<CuentaAhorroService> logger, IUsuarioRepository usuarioRepo,
+            IEmailService emailService)
         {
             _cuentaRepository = cuentaRepository;
             _transaccionRepository = transaccionRepository;
             _mapper = mapper;
             _logger = logger;
+            _usuarioRepo = usuarioRepo;
+            _emailService = emailService;
         }
 
         public async Task<List<CuentaAhorroViewModel>> GetActiveCuentasByClientIdAsync(int clienteId)
@@ -40,23 +45,23 @@ namespace ArtemisBankingPro.Application.Services
         {
             var cuentas = await _cuentaRepository.GetAllAsync();
             
-            // 1. Obtener y validar cuenta origen
+            // Obtener y validar cuenta origen
             var cuentaOrigen = cuentas.FirstOrDefault(c => c.Id == model.CuentaOrigenId && c.ClienteId == clienteId && c.Estado == "Activa");
             if (cuentaOrigen == null) 
                 return (false, "La cuenta de origen no es válida.");
             if (cuentaOrigen.Balance < model.Monto) 
                 return (false, "Balance insuficiente en la cuenta de origen.");
-            // 2. Obtener y validar cuenta destino por su número
+            // Obtener y validar cuenta destino por su num
             var cuentaDestino = cuentas.FirstOrDefault(c => c.NumeroCuenta == model.NumeroCuentaDestino && c.Estado == "Activa");
             if (cuentaDestino == null) 
                 return (false, "La cuenta de destino no existe o no está activa.");
                 
             if (cuentaOrigen.Id == cuentaDestino.Id) 
                 return (false, "No puede transferir a su misma cuenta de origen.");
-            // 3. Actualizar balances
+            // Actualizar balances
             cuentaOrigen.Balance -= model.Monto;
             cuentaDestino.Balance += model.Monto;
-            // 4. Crear Transacción Débito (Origen)
+            // Crear transaccion debito (Origen)
             var transaccionOrigen = new Transaccion
             {
                 CuentaOrigenId = cuentaOrigen.Id,
@@ -89,6 +94,29 @@ namespace ArtemisBankingPro.Application.Services
                 await _transaccionRepository.AddAsync(transaccionOrigen);
                 await _transaccionRepository.AddAsync(transaccionDestino);
                 _logger.LogInformation("Transferencia exitosa. Origen: {Origen}, Destino: {Destino}, Monto: {Monto}", cuentaOrigen.NumeroCuenta, cuentaDestino.NumeroCuenta, model.Monto);
+
+                // Enviar correo de notificacion de la transferencia
+                var cliente = await _usuarioRepo.GetByIdAsync(clienteId);
+                string ultimos4Origen = cuentaOrigen.NumeroCuenta.Substring(cuentaOrigen.NumeroCuenta.Length - 4);
+                string ultimos4Destino = cuentaDestino.NumeroCuenta.Substring(cuentaDestino.NumeroCuenta.Length - 4);
+                var fecha = DateTime.Now;
+
+                string asunto = $"Transferencia realizada a la cuenta {ultimos4Destino}";
+                string cuerpo = $"Hola {cliente!.Nombre},\n\n" +
+                $"Se ha realizado una transferencia desde su cuenta terminada en {ultimos4Origen} hacia la cuenta terminada en {ultimos4Destino}.\n" +
+                $"Monto transferido: RD${model.Monto}\n" +
+                $"Fecha y hora: {fecha}\n\n" +
+                $"Si usted no reconoce esta operación, comuníquese con la entidad bancaria.";
+
+                try
+                {
+                    await _emailService.SendEmailAsync(cliente.Email!, asunto, cuerpo);
+                }
+                catch
+                {
+                    return (true, "La transferencia fue realizada correctamente, pero no fue posible enviar el correo de notificación.");
+                }
+
                 return (true, string.Empty);
             }
             catch (Exception ex)
@@ -170,6 +198,7 @@ namespace ArtemisBankingPro.Application.Services
         return (false, "Error al procesar el retiro.");
     }
 }
+// main
     public async Task<(List<CuentaAhorro> Cuentas, int TotalRegistros)> GetAllPaginatedAsync(
     int page, int pageSize, string? identification, string status, string type)
 {
@@ -346,5 +375,36 @@ public async Task<(bool Success, string ErrorMessage)> CancelSecondaryAccountAsy
 
     return (true, string.Empty);
 }
+
+
+
+    public async Task<List<TransaccionDetalleViewModel>> GetTransaccionesByCuentaIdAsync(int cuentaId, int clienteId)
+{
+    var cuenta = await _cuentaRepository.GetByIdAsync(cuentaId);
+    if (cuenta == null || cuenta.ClienteId != clienteId)
+    {
+        return null;
+    }
+
+    var transacciones = await _transaccionRepository.GetAllAsync();
+    
+    var transaccionesCuenta = transacciones
+        .Where(t => t.CuentaOrigenId == cuentaId || t.CuentaDestinoId == cuentaId)
+        .OrderByDescending(t => t.FechaTransaccion)
+        .Select(t => new TransaccionDetalleViewModel
+        {
+            FechaTransaccion = DateTime.Now,
+            Monto = t.Monto,
+            TipoTransaccion = t.TipoTransaccion,
+            Beneficiario = t.Beneficiario ?? "N/D",
+            Origen = t.Origen ?? "N/D",
+            Estado = t.Estado ?? "APROBADA"
+        })
+        .ToList();
+
+    return transaccionesCuenta;
+}
+
+
     }
 }

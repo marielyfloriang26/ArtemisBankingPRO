@@ -1,0 +1,41 @@
+@{
+    ViewData["Title"] = "Home del cajero";
+}
+
+<div class="container-fluid py-4">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            @TempData["WarningMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <h1 class="h3 mb-4">Bienvenido</h1>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Operaciones</h6>
+        </div>
+        <div class="card-body d-flex flex-wrap gap-2">
+            <a class="btn btn-outline-primary" asp-controller="Cajero" asp-action="PagoPrestamo">Pago a préstamo</a>
+            <a class="btn btn-outline-primary" asp-controller="Cajero" asp-action="TransaccionTerceros">Transacciones a cuentas de terceros</a>
+        </div>
+    </div>
+</div>

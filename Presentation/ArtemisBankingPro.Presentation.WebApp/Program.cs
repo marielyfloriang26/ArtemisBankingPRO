@@ -139,6 +139,29 @@ using (var scope = app.Services.CreateScope())
                 await userManager.AddToRoleAsync(clienteUser, "Cliente");
             }
         }
+
+        // Comercio por defecto
+        var comercioUser = await userManager.FindByNameAsync("comercio_default");
+        if (comercioUser == null)
+        {
+            comercioUser = new Usuario
+            {
+                UserName = "comercio_default",
+                Email = "comercio@artemis.com",
+                Nombre = "Comercio",
+                Apellido = "Sistema",
+                Cedula = "001-0000000-4",
+                Telefono = "809-555-0004",
+                EsActivo = true,
+                EmailConfirmed = true,
+                TipoUsuario = "Comercio"
+            };
+            var createComercio = await userManager.CreateAsync(comercioUser, "Comercio123*");
+            if (createComercio.Succeeded)
+            {
+                await userManager.AddToRoleAsync(comercioUser, "Comercio");
+            }
+        }
     }
     catch (Exception ex)
     {

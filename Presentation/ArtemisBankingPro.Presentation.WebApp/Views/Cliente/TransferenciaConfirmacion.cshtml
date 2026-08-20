@@ -1,0 +1,34 @@
+@model ArtemisBankingPro.Application.ViewModels.Cliente.TransferenciaViewModel
+
+@{
+    ViewData["Title"] = "Confirmar Transferencia";
+}
+
+<div class="container mt-5">
+    <h2>Confirmar Transferencia</h2>
+    <p>Por favor, confirme los detalles de la transferencia:</p>
+
+    <div class="card">
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">Cuenta Origen:</dt>
+                <dd class="col-sm-9">@ViewBag.NumeroCuentaOrigen</dd>
+
+                <dt class="col-sm-3">Cuenta Destino:</dt>
+                <dd class="col-sm-9">@Model.NumeroCuentaDestino</dd>
+
+                <dt class="col-sm-3">Monto:</dt>
+                <dd class="col-sm-9">@Model.Monto.ToString("C")</dd>
+            </dl>
+        </div>
+    </div>
+
+    <form asp-action="TransferenciaConfirmar" method="post" class="mt-4">
+        <input type="hidden" asp-for="CuentaOrigenId" />
+        <input type="hidden" asp-for="NumeroCuentaDestino" />
+        <input type="hidden" asp-for="Monto" />
+
+        <button type="submit" class="btn btn-success">Confirmar</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>

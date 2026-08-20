@@ -1,0 +1,50 @@
+@model ArtemisBankingPro.Application.ViewModels.AdminTarjeta.AssignTarjetaViewModel
+@{
+    ViewData["Title"] = "Configurar Tarjeta";
+}
+
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h4 class="mb-0"><i class="fa-solid fa-credit-card me-2"></i>Asignar Tarjeta de Crédito</h4>
+                </div>
+                <div class="card-body">
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="alert alert-danger">@TempData["Error"]</div>
+                    }
+
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="ClienteId" />
+
+                        <div class="mb-4">
+                            <label asp-for="LimiteCredito" class="form-label fw-bold">Límite de crédito *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">RD$</span>
+                                <input asp-for="LimiteCredito" type="number" step="0.01" min="0.01" class="form-control" required />
+                            </div>
+                            <span asp-validation-for="LimiteCredito" class="text-danger"></span>
+                            <div class="form-text">Monto máximo aprobado para la tarjeta de crédito.</div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="SelectClient" class="btn btn-secondary">
+                                <i class="fa-solid fa-arrow-left me-1"></i> Volver atrás
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                Asignar <i class="fa-solid fa-check ms-1"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

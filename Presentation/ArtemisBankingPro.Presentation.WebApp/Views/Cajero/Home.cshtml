@@ -2,26 +2,144 @@
     ViewData["Title"] = "Cajero - Home";
 }
 
-<div class="container mt-5 text-center">
-    <h2>Panel de Cajero</h2>
-    <p class="text-muted">Seleccione una operación a realizar</p>
+<style>
+    .cajero-card {
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .cajero-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 .75rem 1.5rem rgba(0,0,0,.12) !important;
+    }
+    .indicador-card {
+        border: none;
+        border-radius: 1rem;
+        background: linear-gradient(135deg, rgba(13,110,253,0.06), rgba(13,110,253,0.01));
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .indicador-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 .5rem 1.25rem rgba(13,110,253,.12) !important;
+    }
+    .indicador-icono {
+        width: 48px;
+        height: 48px;
+        border-radius: 0.75rem;
+        background-color: rgba(13,110,253,0.1);
+        color: #0d6efd;
+        font-size: 1.4rem;
+    }
+    .indicador-valor {
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+</style>
 
-    <div class="row justify-content-center mt-4">
+<div class="container mt-5">
+    <div class="text-center mb-4">
+        <h2>Panel de Cajero</h2>
+        <p class="text-muted">Bienvenido, seleccione una operación a realizar</p>
+    </div>
+        @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success text-center">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div class="alert alert-warning text-center">
+            @TempData["WarningMessage"]
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger text-center">
+            @TempData["ErrorMessage"]
+        </div>
+    }
+
+    <!-- Indicadores del día -->
+    <div class="row justify-content-center mb-5 g-3">
+        <div class="col-md-3 col-6">
+            <div class="card indicador-card shadow-sm p-3 h-100">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="indicador-icono d-flex align-items-center justify-content-center">
+                        <i class="bi bi-arrow-left-right"></i>
+                    </div>
+                    <div>
+                        <div class="indicador-valor text-primary">@ViewBag.TransaccionesHoy</div>
+                        <div class="text-muted small">Transacciones hoy</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card indicador-card shadow-sm p-3 h-100">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="indicador-icono d-flex align-items-center justify-content-center">
+                        <i class="bi bi-credit-card-2-back"></i>
+                    </div>
+                    <div>
+                        <div class="indicador-valor text-primary">@ViewBag.PagosHoy</div>
+                        <div class="text-muted small">Pagos realizados hoy</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card indicador-card shadow-sm p-3 h-100">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="indicador-icono d-flex align-items-center justify-content-center">
+                        <i class="bi bi-cash-stack"></i>
+                    </div>
+                    <div>
+                        <div class="indicador-valor text-primary">@ViewBag.DepositosHoy</div>
+                        <div class="text-muted small">Depósitos realizados hoy</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card indicador-card shadow-sm p-3 h-100">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="indicador-icono d-flex align-items-center justify-content-center">
+                        <i class="bi bi-wallet2"></i>
+                    </div>
+                    <div>
+                        <div class="indicador-valor text-primary">@ViewBag.RetirosHoy</div>
+                        <div class="text-muted small">Retiros realizados hoy</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menú de operaciones -->
+    <div class="row justify-content-center">
         <div class="col-md-3 mb-3">
-            <a asp-controller="Cajero" asp-action="Deposito" class="btn btn-outline-primary btn-lg w-100 p-4 shadow-sm">
+            <a asp-controller="Cajero" asp-action="Deposito" class="btn btn-outline-primary btn-lg w-100 p-4 shadow-sm cajero-card">
                 <i class="fs-1 bi bi-cash-stack d-block mb-2"></i> Depósito
             </a>
         </div>
-        <!-- Botón de Retiro -->
         <div class="col-md-3 mb-3">
-            <a asp-controller="Cajero" asp-action="Retiro" class="btn btn-outline-primary btn-lg w-100 p-4 shadow-sm">
+            <a asp-controller="Cajero" asp-action="Retiro" class="btn btn-outline-primary btn-lg w-100 p-4 shadow-sm cajero-card">
                 <i class="fs-1 bi bi-wallet2 d-block mb-2"></i> Retiro
             </a>
         </div>
-        <!-- Botón de Pago a Tarjeta de Crédito -->
         <div class="col-md-3 mb-3">
-            <a asp-controller="Cajero" asp-action="PagoTarjeta" class="btn btn-outline-primary btn-lg w-100 p-4 shadow-sm">
+            <a asp-controller="Cajero" asp-action="PagoTarjeta" class="btn btn-outline-primary btn-lg w-100 p-4 shadow-sm cajero-card">
                 <i class="fs-1 bi bi-credit-card d-block mb-2"></i> Pago Tarjeta
+            </a>
+        </div>
+        <div class="col-md-3 mb-3">
+            <a asp-controller="Cajero" asp-action="PagoPrestamo" class="btn btn-outline-primary btn-lg w-100 p-4 shadow-sm cajero-card">
+                <i class="fs-1 bi bi-bank d-block mb-2"></i> Pago Préstamo
+            </a>
+        </div>
+        <div class="col-md-3 mb-3">
+            <a asp-controller="Cajero" asp-action="TransaccionTerceros" class="btn btn-outline-primary btn-lg w-100 p-4 shadow-sm cajero-card">
+                <i class="fs-1 bi bi-arrow-left-right d-block mb-2"></i> Transacción a Terceros
             </a>
         </div>
     </div>

@@ -1,0 +1,70 @@
+@model IEnumerable<ArtemisBankingPro.Application.ViewModels.AdminTarjeta.ConsumoTarjetaViewModel>
+@{
+    ViewData["Title"] = "Detalles de la Tarjeta";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fa-solid fa-list text-info me-2"></i>Consumos de la Tarjeta</h2>
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="fa-solid fa-arrow-left me-1"></i> Volver atrás
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Fecha del consumo</th>
+                        <th>Monto consumido</th>
+                        <th>Comercio</th>
+                        <th>Estado del consumo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var consumo in Model)
+                        {
+                            <tr>
+                                <td>@consumo.FechaConsumo.ToString("dd/MM/yyyy hh:mm tt")</td>
+                                <td>@consumo.MontoConsumido.ToString("C")</td>
+                                <td>
+                                    @if (consumo.Comercio == "AVANCE")
+                                    {
+                                        <span class="badge bg-info">AVANCE</span>
+                                    }
+                                    else
+                                    {
+                                        @consumo.Comercio
+                                    }
+                                </td>
+                                <td>
+                                    @if (consumo.EstadoConsumo == "APROBADO")
+                                    {
+                                        <span class="badge bg-success">APROBADO</span>
+                                    }
+                                    else if (consumo.EstadoConsumo == "RECHAZADO")
+                                    {
+                                        <span class="badge bg-danger">RECHAZADO</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">@consumo.EstadoConsumo</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">No se encontraron consumos para esta tarjeta.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

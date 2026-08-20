@@ -1,0 +1,165 @@
+@model dynamic
+@{
+    ViewData["Title"] = "Panel Principal - Cliente";
+    
+    // Asignación segura con inicialización vacía para evitar errores de referencia nula
+    var cuentas = (ViewBag.Cuentas as IEnumerable<dynamic>) ?? Enumerable.Empty<dynamic>();
+    var prestamos = (ViewBag.Prestamos as IEnumerable<dynamic>) ?? Enumerable.Empty<dynamic>();
+    var tarjetas = (ViewBag.Tarjetas as IEnumerable<dynamic>) ?? Enumerable.Empty<dynamic>();
+
+    bool tieneCuentas = cuentas.Any();
+    bool tienePrestamos = prestamos.Any();
+    bool tieneTarjetas = tarjetas.Any();
+}
+
+<div class="container mt-4 mb-5">
+
+    @if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["SuccessMessage"]
+    </div>
+}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fa-solid fa-house text-info me-2"></i> Panel Principal del Cliente</h2>
+    </div>
+
+    @if (!tieneCuentas && !tienePrestamos && !tieneTarjetas)
+    {
+        <div class="alert alert-warning text-center p-4 shadow-sm" role="alert">
+            <h4 class="alert-heading"><i class="fa-solid fa-triangle-exclamation me-2"></i> Atención</h4>
+            <p class="mb-0 fs-5">No posee productos financieros activos.</p>
+        </div>
+    }
+    else
+    {
+        <!-- SECCIÓN DE CUENTAS DE AHORRO -->
+        @if (tieneCuentas)
+        {
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0"><i class="fa-solid fa-piggy-bank me-2"></i> Cuentas de Ahorro Activas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Número de cuenta</th>
+                                    <th>Balance actual</th>
+                                    <th>Tipo de cuenta</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var cuenta in cuentas)
+                                {
+                                    <tr>
+                                        <td><strong>@cuenta.NumeroCuenta</strong></td>
+                                        <td>RD$ @((cuenta.Balance ?? 0).ToString("N2"))</td>
+                                        <td>
+                                            <span class="badge @(cuenta.TipoCuenta == "Principal" ? "bg-success" : "bg-secondary")">
+                                                @cuenta.TipoCuenta
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <a asp-action="DetallesCuenta" asp-route-id="@cuenta.Id" class="btn btn-outline-primary btn-sm">Ver detalles</a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- SECCIÓN DE PRÉSTAMOS -->
+        @if (tienePrestamos)
+        {
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-header bg-success text-white py-3">
+                    <h5 class="mb-0"><i class="fa-solid fa-file-invoice-dollar me-2"></i> Préstamos Activos</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Número</th>
+                                    <th>Capital</th>
+                                    <th>Cuotas</th>
+                                    <th>Pendiente</th>
+                                    <th>Tasa / Plazo</th>
+                                    <th>Estado</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var p in prestamos)
+                                {
+                                    <tr>
+                                        <td><strong>@p.NumeroPrestamo</strong></td>
+                                        <td>RD$ @((p.CapitalAprobado ?? 0).ToString("N2"))</td>
+                                        <td>@p.CuotasPagadas / @p.CantidadTotalCuotas</td>
+                                        <td>RD$ @((p.MontoPendiente ?? 0).ToString("N2"))</td>
+                                        <td>@p.TasaInteresAnual% / @p.Plazo meses</td>
+                                        <td>
+                                            <span class="badge @(p.EnMora ? "bg-danger" : "bg-success")">
+                                                @(p.EnMora ? "En mora" : "Al día")
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <a asp-action="DetallesPrestamo" asp-route-id="@p.Id" class="btn btn-outline-success btn-sm">Ver detalles</a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- SECCIÓN DE TARJETAS DE CRÉDITO -->
+        @if (tieneTarjetas)
+        {
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-header bg-dark text-white py-3">
+                    <h5 class="mb-0"><i class="fa-solid fa-credit-card me-2"></i> Tarjetas de Crédito Activas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Número de tarjeta</th>
+                                    <th>Límite</th>
+                                    <th>Adeudado</th>
+                                    <th>Expiración</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var t in tarjetas)
+                                {
+                                    var numStr = t.NumeroTarjeta?.ToString() ?? "0000";
+                                    var masked = "****-****-****-" + (numStr.Length >= 4 ? numStr.Substring(numStr.Length - 4) : numStr);
+                                    <tr>
+                                        <td><code>@masked</code></td>
+                                        <td>RD$ @((t.LimiteCredito ?? 0).ToString("N2"))</td>
+                                        <td>RD$ @((t.MontoAdeudado ?? 0).ToString("N2"))</td>
+                                        <td>@t.FechaExpiracion</td>
+                                        <td class="text-center">
+                                            <a asp-action="DetallesTarjeta" asp-route-id="@t.Id" class="btn btn-outline-dark btn-sm">Ver detalles</a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>

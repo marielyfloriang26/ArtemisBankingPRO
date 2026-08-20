@@ -435,6 +435,9 @@ namespace ArtemisBankingPro.Infrastructure.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("TipoOperacion")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("TipoTransaccion")
                         .IsRequired()
                         .HasMaxLength(15)

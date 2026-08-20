@@ -10,4 +10,10 @@ public class HomeController : Controller
     {
         return View();
     }
+
+    [Authorize(Roles = "Cajero")]
+    public IActionResult Cajero()
+    {
+        return View();
+    }
 }

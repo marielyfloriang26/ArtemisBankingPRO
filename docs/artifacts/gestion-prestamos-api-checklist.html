@@ -1,0 +1,520 @@
+<title>Gestión de Préstamos — Checklist</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #f4f6f4;
+    --surface: #ffffff;
+    --surface-2: #eef1ee;
+    --ink: #1a2420;
+    --ink-soft: #445048;
+    --muted: #6b7670;
+    --line: #dde2dd;
+    --accent: #1e5f5a;
+    --accent-soft: #e4efee;
+    --ok: #2f7d4f;
+    --ok-soft: #e6f2ea;
+    --warn: #9a6a12;
+    --warn-soft: #faf1de;
+    --pending: #7a7368;
+    --pending-soft: #eeece6;
+    --code-bg: #eef1ee;
+    --shadow: 0 1px 2px rgba(20, 30, 25, 0.05), 0 8px 24px -16px rgba(20, 30, 25, 0.25);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #121815;
+      --surface: #1a2320;
+      --surface-2: #202b27;
+      --ink: #eaf0ec;
+      --ink-soft: #c3ccc6;
+      --muted: #8b9891;
+      --line: #2c3a35;
+      --accent: #5fb8ae;
+      --accent-soft: #1d3532;
+      --ok: #6fc793;
+      --ok-soft: #1c3327;
+      --warn: #e0b155;
+      --warn-soft: #3a2f18;
+      --pending: #9aa39d;
+      --pending-soft: #232d29;
+      --code-bg: #202b27;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -16px rgba(0, 0, 0, 0.6);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #121815;
+    --surface: #1a2320;
+    --surface-2: #202b27;
+    --ink: #eaf0ec;
+    --ink-soft: #c3ccc6;
+    --muted: #8b9891;
+    --line: #2c3a35;
+    --accent: #5fb8ae;
+    --accent-soft: #1d3532;
+    --ok: #6fc793;
+    --ok-soft: #1c3327;
+    --warn: #e0b155;
+    --warn-soft: #3a2f18;
+    --pending: #9aa39d;
+    --pending-soft: #232d29;
+    --code-bg: #202b27;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -16px rgba(0, 0, 0, 0.6);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    line-height: 1.55;
+  }
+
+  .wrap { max-width: 920px; margin: 0 auto; padding: 3.5rem 1.5rem 6rem; }
+
+  header.masthead {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    margin-bottom: 2.75rem;
+  }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .eyebrow::before {
+    content: "";
+    width: 1.6rem;
+    height: 1px;
+    background: var(--accent);
+    display: inline-block;
+  }
+
+  h1 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(1.9rem, 3.2vw, 2.6rem);
+    margin: 0;
+    text-wrap: balance;
+    color: var(--ink);
+  }
+
+  .subtitle {
+    color: var(--ink-soft);
+    max-width: 62ch;
+    font-size: 1.02rem;
+  }
+
+  .source {
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+  }
+  .source code {
+    background: var(--code-bg);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    color: var(--ink-soft);
+  }
+
+  .scoreboard {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 2rem 0 3rem;
+    box-shadow: var(--shadow);
+  }
+  .score-cell {
+    background: var(--surface);
+    padding: 1.1rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .score-num {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 1.7rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .score-label {
+    font-size: 0.74rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .score-cell.total .score-num { color: var(--ink); }
+  .score-cell.done .score-num { color: var(--ok); }
+  .score-cell.flag .score-num { color: var(--warn); }
+  .score-cell.pending .score-num { color: var(--pending); }
+
+  section.endpoint {
+    margin-bottom: 2.75rem;
+  }
+
+  .endpoint-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.85rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.4rem;
+    padding-bottom: 0.7rem;
+    border-bottom: 2px solid var(--ink);
+  }
+
+  .method {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-weight: 600;
+    font-size: 0.78rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 5px;
+    letter-spacing: 0.02em;
+  }
+  .method.get { background: var(--accent-soft); color: var(--accent); }
+  .method.post { background: var(--ok-soft); color: var(--ok); }
+  .method.patch { background: var(--warn-soft); color: var(--warn); }
+  .method.all { background: var(--surface-2); color: var(--ink-soft); }
+
+  .route {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+  }
+
+  h2.section-title {
+    font-family: "Fraunces", Georgia, serif;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+    flex-basis: 100%;
+    order: -1;
+  }
+
+  .group-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin: 1.4rem 0 0.5rem;
+    font-weight: 600;
+  }
+
+  ul.reqs {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  li.req {
+    background: var(--surface);
+    display: grid;
+    grid-template-columns: 1.7rem 1fr auto;
+    gap: 0.7rem;
+    align-items: start;
+    padding: 0.65rem 0.9rem;
+    font-size: 0.93rem;
+  }
+
+  .req-id {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    color: var(--muted);
+    font-size: 0.78rem;
+    padding-top: 0.15rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .req-text { color: var(--ink-soft); }
+  .req-text strong { color: var(--ink); font-weight: 600; }
+  .req-text code {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    background: var(--code-bg);
+    padding: 0.05rem 0.35rem;
+    border-radius: 4px;
+    font-size: 0.86em;
+    color: var(--ink);
+  }
+
+  .chip {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.18rem 0.5rem;
+    border-radius: 999px;
+    white-space: nowrap;
+    font-weight: 600;
+    align-self: start;
+    margin-top: 0.1rem;
+  }
+  .chip.done { background: var(--ok-soft); color: var(--ok); }
+  .chip.flag { background: var(--warn-soft); color: var(--warn); }
+  .chip.pending { background: var(--pending-soft); color: var(--pending); }
+
+  blockquote.exact {
+    margin: 0.75rem 0 0;
+    padding: 0.7rem 0.9rem;
+    background: var(--code-bg);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    white-space: pre-wrap;
+    overflow-x: auto;
+  }
+
+  .note {
+    margin-top: 2.5rem;
+    padding: 1.1rem 1.3rem;
+    background: var(--warn-soft);
+    border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent);
+    border-radius: 10px;
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+  }
+  .note strong { color: var(--warn); }
+
+  footer {
+    margin-top: 3rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+  }
+
+  @media (max-width: 600px) {
+    .scoreboard { grid-template-columns: repeat(2, 1fr); }
+    li.req { grid-template-columns: 1.4rem 1fr; }
+    li.req .chip { grid-column: 2; justify-self: start; }
+  }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <span class="eyebrow">Artemis Banking Pro · Funcionalidades del API</span>
+    <h1>Gestión de Préstamos</h1>
+    <p class="subtitle">Checklist de verificación de los 131 requerimientos atómicos extraídos del documento funcional, con estado de implementación por ítem.</p>
+    <p class="source">Fuente: <code>Proyecto final_ Artemis Banking Pro (ABP) .pdf</code>, páginas 165–176 · Transcripción: <code>docs/modulo-api-gestion-prestamos.md</code></p>
+  </header>
+
+  <div class="scoreboard">
+    <div class="score-cell total"><span class="score-num" id="s-total">131</span><span class="score-label">Requerimientos</span></div>
+    <div class="score-cell done"><span class="score-num" id="s-done">129</span><span class="score-label">Implementados</span></div>
+    <div class="score-cell flag"><span class="score-num" id="s-flag">2</span><span class="score-label">Vacíos de spec</span></div>
+    <div class="score-cell pending"><span class="score-num" id="s-pending">0</span><span class="score-label">Pendientes</span></div>
+  </div>
+
+  <section class="endpoint">
+    <div class="endpoint-head">
+      <h2 class="section-title">Seguridad del módulo</h2>
+      <span class="method all">ALL</span>
+      <span class="route">/api/loan/*</span>
+    </div>
+    <ul class="reqs">
+      <li class="req"><span class="req-id">01</span><span class="req-text">Todos los endpoints requieren autenticación mediante JWT.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">02</span><span class="req-text">Cada solicitud envía <code>Authorization: Bearer {token_jwt}</code>.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">03</span><span class="req-text">Solo usuarios con rol <strong>Administrador</strong> pueden consumir los endpoints.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">04</span><span class="req-text">Token ausente/inválido → <code>401 Unauthorized</code>.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">05</span><span class="req-text">Rol distinto de Administrador → <code>403 Forbidden</code>.</span><span class="chip done">Implementado</span></li>
+    </ul>
+  </section>
+
+  <section class="endpoint">
+    <div class="endpoint-head">
+      <h2 class="section-title">Obtener listado de préstamos</h2>
+      <span class="method get">GET</span>
+      <span class="route">/api/loan</span>
+    </div>
+
+    <p class="group-label">Descripción y comportamiento</p>
+    <ul class="reqs">
+      <li class="req"><span class="req-id">06</span><span class="req-text">Listado paginado de préstamos registrados.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">07</span><span class="req-text">Por defecto muestra préstamos <strong>activos</strong>.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">08</span><span class="req-text">Orden por defecto: más reciente → más antiguo.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">09</span><span class="req-text">Permite filtrar por estado.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">10</span><span class="req-text">Permite buscar por cédula del cliente (<code>identification</code>).</span><span class="chip done">Implementado</span></li>
+    </ul>
+
+    <p class="group-label">Query params — tipos y defaults</p>
+    <ul class="reqs">
+      <li class="req"><span class="req-id">11</span><span class="req-text"><code>page</code>: int, opcional, default <code>1</code>.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">12</span><span class="req-text"><code>pageSize</code>: int, opcional, default <code>20</code>.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">13</span><span class="req-text"><code>status</code>: string, opcional, default <code>activos</code>.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">14</span><span class="req-text"><code>identification</code>: string, opcional, default <code>null</code>.</span><span class="chip done">Implementado</span></li>
+    </ul>
+
+    <p class="group-label">Reglas de validación</p>
+    <ul class="reqs">
+      <li class="req"><span class="req-id">15</span><span class="req-text"><code>page</code> debe ser mayor que cero.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">16</span><span class="req-text"><code>pageSize</code> debe ser mayor que cero.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">17</span><span class="req-text">Máximo permitido para <code>pageSize</code>: <strong>20</strong>.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">18</span><span class="req-text"><code>status</code> solo acepta <code>activos</code> / <code>completados</code> / <code>todos</code>.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">19</span><span class="req-text">Con <code>identification</code>, busca los préstamos del cliente correspondiente.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">20</span><span class="req-text">Cédula + sin <code>status</code> → primero activos, luego completados.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">21</span><span class="req-text">Dentro de cada grupo: más reciente → más antiguo.</span><span class="chip done">Implementado</span></li>
+    </ul>
+
+    <p class="group-label">Respuestas y forma exacta</p>
+    <ul class="reqs">
+      <li class="req"><span class="req-id">22</span><span class="req-text"><code>200 OK</code> — listado retornado.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">23</span><span class="req-text"><code>400 Bad Request</code> — parámetro de consulta inválido.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">24</span><span class="req-text"><code>401 Unauthorized</code> — token ausente/inválido/expirado.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">25</span><span class="req-text"><code>403 Forbidden</code> — sin rol Administrador.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">26</span><span class="req-text">Envoltura: <code>page</code>, <code>pageSize</code>, <code>totalRecords</code>, <code>totalPages</code>, <code>data[]</code>.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">27</span><span class="req-text">Campos de cada ítem: <code>id, loanNumber, clientId, clientFullName, capitalAmount, totalInstallments, paidInstallments, pendingAmount, annualInterestRate, termInMonths, status, clientPaymentStatus, createdAt</code>.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">28</span><span class="req-text"><code>status</code> de respuesta usa <code>"Activo"</code> (no <code>activos</code>).</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">29</span><span class="req-text"><code>clientPaymentStatus</code> usa exactamente <code>"Al día"</code>.</span><span class="chip done">Implementado</span></li>
+    </ul>
+  </section>
+
+  <section class="endpoint">
+    <div class="endpoint-head">
+      <h2 class="section-title">Asignar préstamo a cliente</h2>
+      <span class="method post">POST</span>
+      <span class="route">/api/loan</span>
+    </div>
+
+    <p class="group-label">Descripción y campos del body</p>
+    <ul class="reqs">
+      <li class="req"><span class="req-id">30</span><span class="req-text">Crea un préstamo para un cliente activo.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">31</span><span class="req-text">Genera la tabla de amortización automáticamente.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">32</span><span class="req-text">Acredita el monto en la cuenta de ahorro principal.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">33</span><span class="req-text">Registra la transacción correspondiente.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">34</span><span class="req-text">Un cliente solo puede tener un préstamo activo a la vez.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">35–39</span><span class="req-text"><code>clientId</code> (string, sí), <code>capitalAmount</code> (decimal, sí), <code>termInMonths</code> (int, sí), <code>annualInterestRate</code> (decimal, sí), <code>confirmHighRisk</code> (boolean, no).</span><span class="chip done">Implementado</span></li>
+    </ul>
+
+    <p class="group-label">Reglas de validación</p>
+    <ul class="reqs">
+      <li class="req"><span class="req-id">40</span><span class="req-text">Todos los campos obligatorios excepto <code>confirmHighRisk</code>.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">41</span><span class="req-text">El cliente debe existir.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">42</span><span class="req-text">El cliente debe estar activo.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">43</span><span class="req-text">El cliente no debe tener un préstamo activo.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">44</span><span class="req-text">El cliente debe tener cuenta de ahorro principal activa.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">45</span><span class="req-text">Monto del préstamo mayor que cero.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">46</span><span class="req-text">Tasa de interés anual no negativa.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">47</span><span class="req-text">Plazo debe ser uno de los valores permitidos.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">48</span><span class="req-text">Se valida alto riesgo antes de crear el préstamo.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">49</span><span class="req-text"><code>termInMonths</code> ∈ <code>{6,12,18,24,30,36,42,48,54,60}</code>.</span><span class="chip done">Implementado</span></li>
+    </ul>
+
+    <p class="group-label">Validación de cliente de alto riesgo</p>
+    <ul class="reqs">
+      <li class="req"><span class="req-id">50</span><span class="req-text">Se calcula la deuda promedio de clientes activos.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">51</span><span class="req-text">La deuda promedio incluye préstamos y deudas de tarjetas activas.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">52</span><span class="req-text">Alto riesgo si deuda actual &gt; deuda promedio.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">53</span><span class="req-text">Alto riesgo si deuda proyectada &gt; deuda promedio.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">54</span><span class="req-text">Fórmula: deuda proyectada = deuda actual + total a pagar del nuevo préstamo.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">55</span><span class="req-text">Total a pagar = suma de todas las cuotas de la amortización.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">56</span><span class="req-text">Alto riesgo + <code>confirmHighRisk</code> ≠ <code>true</code> → <code>409 Conflict</code>.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">57–58</span><span class="req-text">409 debe exponer la razón y permitir reenvío con <code>confirmHighRisk: true</code>.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">59</span><span class="req-text"><code>confirmHighRisk: true</code> → se permite crear igual.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">60</span><span class="req-text">Mensaje 409 verbatim (crítico, ver cita).</span><span class="chip done">Implementado</span>
+        <blockquote class="exact">"Asignar este préstamo convertirá al cliente en un cliente de alto riesgo, ya que su deuda superará el umbral promedio del sistema."</blockquote>
+      </li>
+      <li class="req"><span class="req-id">61–62</span><span class="req-text">Campos <code>riskType</code>, <code>currentDebt</code>, <code>projectedDebt</code>, <code>averageDebt</code> presentes.</span><span class="chip done">Implementado</span></li>
+    </ul>
+
+    <p class="group-label">Procesamiento y número de préstamo</p>
+    <ul class="reqs">
+      <li class="req"><span class="req-id">63–69</span><span class="req-text">Crea en estado Activo; genera nº de 9 dígitos; genera amortización; acredita cuenta principal; registra transacción <strong>CRÉDITO</strong>; asocia al admin autenticado; envía correo de aprobación.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">70–74</span><span class="req-text">Nº de préstamo: 9 dígitos, único, no choca con nº de préstamo ni de cuenta, almacenado como texto.</span><span class="chip done">Implementado</span></li>
+    </ul>
+
+    <p class="group-label">Respuestas y forma exacta</p>
+    <ul class="reqs">
+      <li class="req"><span class="req-id">75</span><span class="req-text"><code>201 Created</code> — préstamo creado.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">76</span><span class="req-text"><code>400 Bad Request</code> — datos inválidos o préstamo activo existente.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">77</span><span class="req-text"><code>401 Unauthorized</code>.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">78</span><span class="req-text"><code>403 Forbidden</code>.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">79</span><span class="req-text"><code>404 Not Found</code> — cliente no existe.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">80</span><span class="req-text"><code>409 Conflict</code> — alto riesgo sin confirmar.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">81</span><span class="req-text">Campos 201: <code>id, loanNumber, clientId, clientFullName, capitalAmount, termInMonths, annualInterestRate, monthlyInstallment, totalAmountToPay, status, createdAt</code>.</span><span class="chip done">Implementado</span></li>
+    </ul>
+  </section>
+
+  <section class="endpoint">
+    <div class="endpoint-head">
+      <h2 class="section-title">Detalle de préstamo y amortización</h2>
+      <span class="method get">GET</span>
+      <span class="route">/api/loan/{id}</span>
+    </div>
+    <ul class="reqs">
+      <li class="req"><span class="req-id">82</span><span class="req-text">Retorna detalle del préstamo y su tabla de amortización.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">83</span><span class="req-text"><code>id</code> (route param): string, requerido.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">84</span><span class="req-text"><code>200 OK</code> — detalle retornado.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">85</span><span class="req-text"><code>401 Unauthorized</code>.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">86</span><span class="req-text"><code>403 Forbidden</code>.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">87</span><span class="req-text"><code>404 Not Found</code> — préstamo no existe.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">88</span><span class="req-text">Campos raíz: <code>id, loanNumber, clientId, clientFullName, capitalAmount, annualInterestRate, termInMonths, monthlyInstallment, pendingAmount, status, clientPaymentStatus, createdAt, amortization[]</code>.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">89</span><span class="req-text">Campos de cuota: <code>installmentNumber, dueDate, installmentAmount, interestAmount, capitalAmount, pendingInstallmentAmount, paymentStatus, isLate</code>.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">90</span><span class="req-text"><code>paymentStatus</code> ejemplo: <code>"Pagada"</code> / <code>"Pendiente"</code>.</span><span class="chip flag">Vacío de spec</span></li>
+    </ul>
+  </section>
+
+  <section class="endpoint">
+    <div class="endpoint-head">
+      <h2 class="section-title">Editar tasa de interés</h2>
+      <span class="method patch">PATCH</span>
+      <span class="route">/api/loan/{id}/rate</span>
+    </div>
+    <ul class="reqs">
+      <li class="req"><span class="req-id">91</span><span class="req-text">Modifica la tasa anual de un préstamo activo.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">92</span><span class="req-text">Recalcula únicamente cuotas futuras pendientes.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">93–96</span><span class="req-text">No modifica cuotas pagadas, parcialmente pagadas, vencidas, ni con vencimiento ≤ hoy.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">97</span><span class="req-text"><code>id</code> (route param): string, requerido.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">98</span><span class="req-text"><code>annualInterestRate</code>: decimal, requerido.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">99–103</span><span class="req-text">Préstamo debe existir y estar activo; tasa obligatoria y no negativa; debe existir ≥1 cuota futura pendiente.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">104–108</span><span class="req-text">Solo se recalculan cuotas futuras pendientes (repetido de 92–96).</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">109</span><span class="req-text">Envía correo notificando el cambio de tasa.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">110</span><span class="req-text"><code>204 No Content</code> — tasa actualizada, sin cuerpo.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">111</span><span class="req-text"><code>400 Bad Request</code> — tasa no provista/inválida o sin cuotas futuras.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">112</span><span class="req-text"><code>401 Unauthorized</code>.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">113</span><span class="req-text"><code>403 Forbidden</code>.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">114</span><span class="req-text"><code>404 Not Found</code> — préstamo no existe.</span><span class="chip done">Implementado</span></li>
+      <li class="req"><span class="req-id">115</span><span class="req-text">Sin cuerpo JSON en la respuesta de éxito.</span><span class="chip done">Implementado</span></li>
+    </ul>
+  </section>
+
+  <section class="endpoint">
+    <div class="endpoint-head">
+      <h2 class="section-title">Reglas adicionales del módulo</h2>
+      <span class="method all">TODOS</span>
+      <span class="route">/api/loan/*</span>
+    </div>
+    <ul class="reqs">
+      <li class="req"><span class="req-id">116–131</span><span class="req-text">Repaso transversal: JWT + rol Administrador; paginación y orden; filtro por estado/cédula; un préstamo activo por cliente; asignación solo a clientes activos; estado Activo al crear; nº de préstamo de 9 dígitos único (no choca con cuentas); desembolso acredita cuenta principal y registra <strong>CRÉDITO</strong>; amortización automática; <code>409 Conflict</code> por alto riesgo; recálculo de tasa solo en cuotas futuras; notificaciones por correo en creación y cambio de tasa.</span><span class="chip done">Implementado</span></li>
+    </ul>
+  </section>
+
+  <div class="note">
+    <strong>Vacíos de spec detectados</strong> — no fabricados, señalados: (1) el ítem 90 no define el literal exacto de <code>paymentStatus</code> para cuotas vencidas o parcialmente pagadas — solo se ilustran <code>"Pagada"</code>/<code>"Pendiente"</code>, y el código simplemente pasa el valor ya almacenado en <code>EstadoPago</code>. (2) el 409 solo trae el mensaje exacto para el caso de deuda <em>proyectada</em>; el caso de deuda <em>actual</em> ya alta no tiene mensaje/tipo de riesgo propio en este módulo — se reutilizó el texto ya establecido en el flujo MVC hermano (<code>PrestamoController</code>) para esa rama, con un <code>riskType: "CurrentHighRisk"</code> nuevo y consistente.
+    <br><br>
+    <strong>Corregido tras la verificación independiente:</strong> el subagente de revisión detectó que el chequeo de riesgo (409) se ejecutaba antes que las validaciones de elegibilidad del cliente (préstamo activo existente, cuenta principal, cliente inactivo) que la especificación mapea a 400 — un cliente con préstamo activo podía recibir 409 en vez de 400. Se extrajo esa validación a <code>PrestamoService.ValidarElegibilidadPrestamoAsync</code> y se reordenó el controlador para que corra antes de la evaluación de riesgo.
+  </div>
+
+  <footer>Actualizado tras la pasada de implementación y verificación independiente por subagente.</footer>
+</div>

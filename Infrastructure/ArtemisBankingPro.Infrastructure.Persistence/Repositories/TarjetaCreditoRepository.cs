@@ -23,4 +23,11 @@ public class TarjetaCreditoRepository : GenericRepository<TarjetaCredito>, ITarj
             .Where(t => t.ClienteId == clienteId)
             .ToListAsync();
     }
+
+    public async Task<TarjetaCredito?> GetByNumeroTarjetaAsync(string numeroTarjeta)
+    {
+        return await _dbContext.TarjetasCredito
+            .Include(t => t.Cliente)
+            .FirstOrDefaultAsync(t => t.NumeroTarjeta == numeroTarjeta);
+    }
 }

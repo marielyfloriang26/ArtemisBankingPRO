@@ -2,15 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Security.Cryptography; 
-using System.Text;
 using AutoMapper;
 using Microsoft.Extensions.Logging;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Application.ViewModels.Cliente;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Application.Interfaces.Repositories;
-using Microsoft.AspNetCore.Identity;
 
 namespace ArtemisBankingPro.Application.Services
 {
@@ -20,29 +17,32 @@ namespace ArtemisBankingPro.Application.Services
         private readonly IGenericRepository<CuentaAhorro> _cuentaRepository;
         private readonly IGenericRepository<ConsumoTarjeta> _consumoRepository;
         private readonly IGenericRepository<Transaccion> _transaccionRepository;
+        private readonly IUsuarioRepository _usuarioRepo;
+        private readonly IPrestamoService _prestamoService;
         private readonly IEmailService _emailService;
         private readonly IMapper _mapper;
         private readonly ILogger<TarjetaCreditoService> _logger;
-        private readonly UserManager<Usuario> _userManager;
 
         public TarjetaCreditoService(
             IGenericRepository<TarjetaCredito> tarjetaRepository,
             IGenericRepository<CuentaAhorro> cuentaRepository,
             IGenericRepository<ConsumoTarjeta> consumoRepository,
             IGenericRepository<Transaccion> transaccionRepository,
+            IUsuarioRepository usuarioRepo,
+            IPrestamoService prestamoService,
             IEmailService emailService,
             IMapper mapper,
-            ILogger<TarjetaCreditoService> logger,
-            UserManager<Usuario> userManager)
+            ILogger<TarjetaCreditoService> logger)
         {
             _tarjetaRepository = tarjetaRepository;
             _cuentaRepository = cuentaRepository;
             _consumoRepository = consumoRepository;
             _transaccionRepository = transaccionRepository;
+            _usuarioRepo = usuarioRepo;
+            _prestamoService = prestamoService;
             _emailService = emailService;
             _mapper = mapper;
             _logger = logger;
-            _userManager = userManager;
         }
 
         public async Task<List<TarjetaCreditoViewModel>> GetActiveCardsByClientIdAsync(int clienteId)
@@ -66,7 +66,7 @@ namespace ArtemisBankingPro.Application.Services
 
             // 2. Obtener la Cuenta de Ahorro destino
             var cuentas = await _cuentaRepository.GetAllAsync();
-            var cuenta = cuentas.FirstOrDefault(c => c.Id == model.CuentaAhorroDestinoId && c.ClienteId == clienteId && c.Estado == "Activa");
+            var cuenta = cuentas.FirstOrDefault(c => c.Id == model.CuentaAhorroDestinoId && c.ClienteId == clienteId && c.Estado == "Activa" && c.TipoCuenta == "Principal");
 
             if (cuenta == null)
             {
@@ -125,8 +125,26 @@ namespace ArtemisBankingPro.Application.Services
                 _logger.LogInformation("Avance de efectivo exitoso. Cliente: {ClienteId}, Tarjeta: {Tarjeta}, Cuenta Destino: {CuentaId}, Monto Solicitado: {Monto}, Interés: {Interes}", 
                     clienteId, tarjetaOculta, cuenta.Id, model.Monto, montoInteres);
 
-                // (Opcional) Enviar correo
-                // await _emailService.SendEmailAsync("correo@cliente.com", "Avance de Efectivo Realizado", $"Se ha realizado un avance de efectivo por {model.Monto} a su cuenta.");
+                                // Enviar correo de notificación del avance de efectivo
+                var cliente = await _usuarioRepo.GetByIdAsync(clienteId);
+                string ultimos4Tarjeta = tarjeta.NumeroTarjeta.Substring(12);
+                string ultimos4Cuenta = cuenta.NumeroCuenta.Substring(cuenta.NumeroCuenta.Length - 4);
+
+                string asunto = $"Avance de efectivo desde la tarjeta {ultimos4Tarjeta}";
+                string cuerpo = $"Hola {cliente!.Nombre},\n\n" + $"Se ha realizado un avance de efectivo desde su tarjeta terminada en {ultimos4Tarjeta}.\n" + $"Monto depositado: RD${model.Monto}\n" +
+                $"Interés aplicado: RD${montoInteres}\n" +
+                $"Total cargado a la tarjeta: RD${montoTotalAdeudar}\n" +
+                $"Cuenta destino terminada en: {ultimos4Cuenta}\n" +
+                $"Fecha y hora: {DateTime.Now}\n\n" + $"Si usted no reconoce esta operación, comuníquese con la entidad bancaria.";
+
+                try
+                {
+                    await _emailService.SendEmailAsync(cliente.Email!, asunto, cuerpo);
+                }
+                catch
+                {
+                    return (true, "El avance fue realizado correctamente, pero no fue posible enviar el correo de notificación.");
+                }
 
                 return (true, string.Empty);
             }
@@ -146,280 +164,281 @@ namespace ArtemisBankingPro.Application.Services
         }
 
         public async Task<(bool Success, string ErrorMessage)> RealizarPagoAsync(ViewModels.Cajero.PagoTarjetaViewModel model, int cajeroId)
-{
-    var tarjetas = await _tarjetaRepository.GetAllAsync();
-    var tarjeta = tarjetas.FirstOrDefault(t => t.NumeroTarjeta == model.NumeroTarjeta && t.Estado == "Activa");
-
-    if (tarjeta == null) return (false, "La tarjeta no existe o no está activa.");
-
-    tarjeta.MontoAdeudado -= model.Monto;
-
-    var consumo = new ConsumoTarjeta
-    {
-        TarjetaId = tarjeta.Id,
-        Monto = model.Monto,
-        Comercio = "PAGO_CAJA",
-        Estado = "APROBADO",
-        FechaConsumo = DateTime.UtcNow
-    };
-
-    var transaccion = new Transaccion
-    {
-        Monto = model.Monto,
-        TipoTransaccion = "CRÉDITO",
-        Origen = "PAGO",
-        Beneficiario = $"nº tarjeta {EnmascararTarjeta(tarjeta.NumeroTarjeta)}",
-        Estado = "APROBADA",
-        UsuarioResponsableId = cajeroId,
-        FechaTransaccion = DateTime.UtcNow
-    };
-
-    try
-    {
-        await _tarjetaRepository.UpdateAsync(tarjeta, tarjeta.Id);
-        await _consumoRepository.AddAsync(consumo);
-        await _transaccionRepository.AddAsync(transaccion);
-        return (true, string.Empty);
-    }
-    catch
-    {
-        return (false, "Error al procesar el pago.");
-    }
-}
-
-    // ==================== MÉTODOS PARA WEB API ====================
-
-        public async Task<(bool Success, string Message, object? Data)> GetCreditCardsPagedAsync(int page, int pageSize, string status, string? identification)
         {
-            if (page <= 0 || pageSize <= 0 || pageSize > 20)
-                return (false, "Parámetros de paginación inválidos.", null);
+            var tarjetas = await _tarjetaRepository.GetAllAsync();
+            var tarjeta = tarjetas.FirstOrDefault(t => t.NumeroTarjeta == model.NumeroTarjeta && t.Estado == "Activa");
 
-            status = status.ToLower();
-            if (status != "activa" && status != "cancelada" && status != "todas")
-                return (false, "Estado no permitido.", null);
+            if (tarjeta == null) return (false, "La tarjeta no existe o no está activa.");
 
-            var todas = await _tarjetaRepository.GetAllAsync();
-            IEnumerable<TarjetaCredito> query = todas;
+            tarjeta.MontoAdeudado -= model.Monto;
 
-            if (!string.IsNullOrEmpty(identification))
+            var consumo = new ConsumoTarjeta
             {
-                query = query.Where(t => t.Cliente != null && t.Cliente.Cedula == identification);
-                if (status == "todas")
-                {
-                    query = query.OrderByDescending(t => t.Estado == "Activa").ThenByDescending(t => t.FechaCreacion);
-                }
-            }
-            else
-            {
-                if (status == "activa") query = query.Where(t => t.Estado == "Activa");
-                else if (status == "cancelada") query = query.Where(t => t.Estado == "Cancelada");
-
-                query = query.OrderByDescending(t => t.FechaCreacion);
-            }
-
-            int totalRecords = query.Count();
-            int totalPages = (int)Math.Ceiling(totalRecords / (double)pageSize);
-
-            var cards = query.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-
-            var listData = cards.Select(t => new {
-                id = t.Id.ToString(),
-                maskedCardNumber = $"************{t.NumeroTarjeta.Substring(t.NumeroTarjeta.Length - 4)}",
-                lastFourDigits = t.NumeroTarjeta.Substring(t.NumeroTarjeta.Length - 4),
-                clientId = t.ClienteId.ToString(),
-                clientFullName = t.Cliente != null ? $"{t.Cliente.Nombre} {t.Cliente.Apellido}" : "",
-                creditLimit = t.LimiteCredito,
-                availableCredit = t.LimiteCredito - t.MontoAdeudado,
-                currentDebt = t.MontoAdeudado,
-                expirationDate = t.FechaExpiracion,
-                status = t.Estado,
-                createdAt = t.FechaCreacion.ToString("yyyy-MM-ddTHH:mm:ss")
-            }).ToList();
-
-            var response = new {
-                page = page,
-                pageSize = pageSize,
-                totalRecords = totalRecords,
-                totalPages = totalPages,
-                data = listData
+                TarjetaId = tarjeta.Id,
+                Monto = model.Monto,
+                Comercio = "PAGO_CAJA",
+                Estado = "APROBADO",
+                FechaConsumo = DateTime.UtcNow
             };
 
-            return (true, "OK", response);
+            var transaccion = new Transaccion
+            {
+                Monto = model.Monto,
+                TipoTransaccion = "CRÉDITO",
+                Origen = "PAGO",
+                Beneficiario = $"nº tarjeta {EnmascararTarjeta(tarjeta.NumeroTarjeta)}",
+                Estado = "APROBADA",
+                UsuarioResponsableId = cajeroId,
+                FechaTransaccion = DateTime.UtcNow
+            };
+
+            try
+            {
+                await _tarjetaRepository.UpdateAsync(tarjeta, tarjeta.Id);
+                await _consumoRepository.AddAsync(consumo);
+                await _transaccionRepository.AddAsync(transaccion);
+                return (true, string.Empty);
+            }
+            catch
+            {
+                return (false, "Error al procesar el pago.");
+            }
         }
 
-        public async Task<(bool Success, string Message, object? Data)> AssignCreditCardAsync(string clientIdStr, decimal creditLimit, int adminUserId)
+        public async Task<List<ArtemisBankingPro.Application.ViewModels.AdminTarjeta.TarjetaAdminViewModel>> GetAllTarjetasFilteredAsync(string? cedula, string estadoFiltro)
         {
-            if (creditLimit <= 0)
-                return (false, "El límite debe ser mayor a cero.", null);
+            var tarjetas = await _tarjetaRepository.GetAllAsync();
+            var clientes = await _usuarioRepo.GetAllClientesAsync();
+            
+            var join = from t in tarjetas
+                       join c in clientes on t.ClienteId equals c.Id
+                       select new { t, c };
 
-            if (!int.TryParse(clientIdStr, out int clientId))
-                return (false, "Cliente no encontrado.", null);
+            if (!string.IsNullOrEmpty(cedula))
+            {
+                join = join.Where(x => x.c.Cedula == cedula);
+            }
 
-            var cliente = await _userManager.FindByIdAsync(clientIdStr);
-            if (cliente == null || !cliente.EsActivo)
-                return (false, "El cliente no existe o está inactivo.", null);
+            if (!string.IsNullOrEmpty(estadoFiltro) && estadoFiltro != "Todas")
+            {
+                string estadoReal = estadoFiltro == "Activas" ? "Activa" : "Cancelada";
+                join = join.Where(x => x.t.Estado == estadoReal);
+            }
 
-            string numeroTarjeta = await GenerarNumeroTarjetaUnicoAsync();
-            string rawCvc = new Random().Next(100, 1000).ToString();
-            string hashedCvc = HashSHA256(rawCvc);
-            string fechaExpiracion = DateTime.UtcNow.AddYears(3).ToString("MM/yy");
+            var ordered = join
+                .OrderBy(x => x.t.Estado == "Activa" ? 0 : 1)
+                .ThenByDescending(x => x.t.FechaCreacion)
+                .ToList();
+
+            return ordered.Select(x => new ArtemisBankingPro.Application.ViewModels.AdminTarjeta.TarjetaAdminViewModel
+            {
+                Id = x.t.Id,
+                NumeroTarjeta = EnmascararTarjeta(x.t.NumeroTarjeta),
+                Cliente = $"{x.c.Nombre} {x.c.Apellido}",
+                LimiteCredito = x.t.LimiteCredito,
+                FechaExpiracion = x.t.FechaExpiracion,
+                MontoAdeudado = x.t.MontoAdeudado,
+                Estado = x.t.Estado == "Activa" ? "Activa" : "Cancelada",
+                Cedula = x.c.Cedula
+            }).ToList();
+        }
+
+        public async Task<List<ArtemisBankingPro.Application.ViewModels.Prestamos.ClienteElegibleViewModel>> GetClientesElegiblesAsync(string? cedula)
+        {
+            var clientes = await _usuarioRepo.GetAllClientesAsync();
+            clientes = clientes.Where(c => c.EsActivo).ToList();
+
+            if (!string.IsNullOrEmpty(cedula))
+            {
+                clientes = clientes.Where(c => c.Cedula.Contains(cedula)).ToList();
+            }
+
+            var results = new List<ArtemisBankingPro.Application.ViewModels.Prestamos.ClienteElegibleViewModel>();
+            foreach (var c in clientes)
+            {
+                decimal deuda = await _prestamoService.CalcularDeudaTotalClienteAsync(c.Id);
+                results.Add(new ArtemisBankingPro.Application.ViewModels.Prestamos.ClienteElegibleViewModel
+                {
+                    Id = c.Id,
+                    Cedula = c.Cedula,
+                    NombreCompleto = $"{c.Nombre} {c.Apellido}",
+                    Correo = c.Email ?? "",
+                    DeudaTotal = deuda
+                });
+            }
+            return results;
+        }
+
+        public async Task<decimal> CalcularDeudaPromedioGlobalAsync()
+        {
+            return await _prestamoService.CalcularDeudaPromedioGlobalAsync();
+        }
+
+        private string GenerarNumeroTarjetaUnico(IEnumerable<TarjetaCredito> tarjetasExistentes)
+        {
+            var rng = new Random();
+            while (true)
+            {
+                string num = "";
+                for(int i=0; i<16; i++) num += rng.Next(0, 10).ToString();
+                
+                if (!tarjetasExistentes.Any(t => t.NumeroTarjeta == num)) return num;
+            }
+        }
+
+        private string GenerarCvcUnico()
+        {
+            var rng = new Random();
+            return rng.Next(100, 999).ToString();
+        }
+
+        private string ComputeSha256Hash(string rawData)
+        {
+            using (System.Security.Cryptography.SHA256 sha256Hash = System.Security.Cryptography.SHA256.Create())
+            {
+                byte[] bytes = sha256Hash.ComputeHash(System.Text.Encoding.UTF8.GetBytes(rawData));
+                System.Text.StringBuilder builder = new System.Text.StringBuilder();
+                for (int i = 0; i < bytes.Length; i++)
+                {
+                    builder.Append(bytes[i].ToString("x2"));
+                }
+                return builder.ToString();
+            }
+        }
+
+        public async Task<string> AsignarTarjetaAsync(ArtemisBankingPro.Application.ViewModels.AdminTarjeta.AssignTarjetaViewModel model)
+        {
+            var cliente = await _usuarioRepo.GetByIdAsync(model.ClienteId);
+            if (cliente == null) return "El cliente seleccionado no existe.";
+            if (!cliente.EsActivo) return "Solo se puede asignar tarjetas de crédito a clientes activos.";
+            if (model.LimiteCredito <= 0) return "El límite de crédito debe ser mayor que cero.";
+
+            var tarjetas = await _tarjetaRepository.GetAllAsync();
+            string numTarjeta = GenerarNumeroTarjetaUnico(tarjetas);
+            string cvcTexto = GenerarCvcUnico();
+            string cvcHash = ComputeSha256Hash(cvcTexto);
 
             var tarjeta = new TarjetaCredito
             {
-                NumeroTarjeta = numeroTarjeta,
-                ClienteId = clientId,
-                LimiteCredito = creditLimit,
-                MontoAdeudado = 0.00m,
-                FechaExpiracion = fechaExpiracion,
-                CVC = hashedCvc,
+                ClienteId = model.ClienteId,
+                NumeroTarjeta = numTarjeta,
+                LimiteCredito = model.LimiteCredito,
+                MontoAdeudado = 0,
+                FechaExpiracion = DateTime.UtcNow.AddYears(3).ToString("MM/yy"),
+                CVC = cvcHash,
+                AdminId = model.AdminId,
                 Estado = "Activa",
-                AdminId = adminUserId,
                 FechaCreacion = DateTime.UtcNow
             };
 
-            var guardada = await _tarjetaRepository.AddAsync(tarjeta);
+            await _tarjetaRepository.AddAsync(tarjeta);
 
-            if (!string.IsNullOrEmpty(cliente.Email))
+            try
             {
-                try
-                {
-                    string ultimos4 = numeroTarjeta.Substring(numeroTarjeta.Length - 4);
-                    await _emailService.SendEmailAsync(cliente.Email, "Asignación de Tarjeta", $"Se te asignó la tarjeta ****{ultimos4} con un límite de RD${creditLimit:N2}");
-                }
-                catch { }
+                string ultimos4 = numTarjeta.Substring(12);
+                string exp = tarjeta.FechaExpiracion;
+                await _emailService.SendEmailAsync(cliente.Email!, "Nueva tarjeta de crédito asignada", $"Tarjeta terminada en: {ultimos4}, Límite aprobado: {model.LimiteCredito}, Fecha de expiración: {exp}");
+            }
+            catch
+            {
+                return "La tarjeta fue creada correctamente, pero no fue posible enviar el correo de notificación.";
             }
 
-            string last4 = guardada.NumeroTarjeta.Substring(guardada.NumeroTarjeta.Length - 4);
-            var data = new {
-                id = guardada.Id.ToString(),
-                maskedCardNumber = $"************{last4}",
-                lastFourDigits = last4,
-                clientId = cliente.Id.ToString(),
-                clientFullName = $"{cliente.Nombre} {cliente.Apellido}",
-                creditLimit = guardada.LimiteCredito,
-                availableCredit = guardada.LimiteCredito,
-                currentDebt = 0.00m,
-                expirationDate = guardada.FechaExpiracion,
-                status = guardada.Estado,
-                createdAt = guardada.FechaCreacion.ToString("yyyy-MM-ddTHH:mm:ss")
-            };
-
-            return (true, "Creada", data);
+            return string.Empty;
         }
 
-        public async Task<(bool Success, string Message, object? Data)> GetCreditCardDetailsAsync(string id)
+        public async Task<List<ArtemisBankingPro.Application.ViewModels.AdminTarjeta.ConsumoTarjetaViewModel>> GetConsumosTarjetaAsync(int tarjetaId)
         {
-            if (!int.TryParse(id, out int cardId)) return (false, "Not Found", null);
-
-            var t = await _tarjetaRepository.GetByIdAsync(cardId);
-            if (t == null) return (false, "Not Found", null);
-
             var consumos = await _consumoRepository.GetAllAsync();
-            var listConsumos = consumos
-                .Where(c => c.TarjetaId == cardId)
-                .OrderByDescending(c => c.FechaConsumo)
-                .Select(c => new {
-                    id = c.Id.ToString(),
-                    date = c.FechaConsumo.ToString("yyyy-MM-ddTHH:mm:ss"),
-                    amount = c.Monto,
-                    commerceName = c.Comercio,
-                    status = c.Estado
-                }).ToList();
-
-            string last4 = t.NumeroTarjeta.Substring(t.NumeroTarjeta.Length - 4);
-            var data = new {
-                id = t.Id.ToString(),
-                maskedCardNumber = $"************{last4}",
-                lastFourDigits = last4,
-                clientId = t.ClienteId.ToString(),
-                clientFullName = t.Cliente != null ? $"{t.Cliente.Nombre} {t.Cliente.Apellido}" : "",
-                creditLimit = t.LimiteCredito,
-                availableCredit = t.LimiteCredito - t.MontoAdeudado,
-                currentDebt = t.MontoAdeudado,
-                expirationDate = t.FechaExpiracion,
-                status = t.Estado,
-                consumptions = listConsumos
-            };
-
-            return (true, "OK", data);
+            return consumos.Where(c => c.TarjetaId == tarjetaId)
+                           .OrderByDescending(c => c.FechaConsumo)
+                           .Select(c => new ArtemisBankingPro.Application.ViewModels.AdminTarjeta.ConsumoTarjetaViewModel
+                           {
+                               FechaConsumo = c.FechaConsumo,
+                               MontoConsumido = c.Monto,
+                               Comercio = c.Comercio,
+                               EstadoConsumo = c.Estado
+                           }).ToList();
         }
 
-        public async Task<(bool Success, string Message)> UpdateCreditLimitAsync(string id, decimal newLimit)
+        public async Task<ArtemisBankingPro.Application.ViewModels.AdminTarjeta.EditLimiteTarjetaViewModel?> GetEditLimiteViewModelAsync(int id)
         {
-            if (newLimit <= 0) return (false, "El límite debe ser mayor a cero.");
-            if (!int.TryParse(id, out int cardId)) return (false, "Not Found");
-
-            var tarjeta = await _tarjetaRepository.GetByIdAsync(cardId);
-            if (tarjeta == null) return (false, "Not Found");
-            if (tarjeta.Estado != "Activa") return (false, "La tarjeta no está activa.");
-            if (newLimit < tarjeta.MontoAdeudado) return (false, "El nuevo límite no puede ser menor a la deuda actual.");
-
-            tarjeta.LimiteCredito = newLimit;
-            await _tarjetaRepository.UpdateAsync(tarjeta, cardId);
-
-            var cliente = await _userManager.FindByIdAsync(tarjeta.ClienteId.ToString());
-            if (cliente != null && !string.IsNullOrEmpty(cliente.Email))
+            var tarjeta = await _tarjetaRepository.GetByIdAsync(id);
+            if (tarjeta == null) return null;
+            return new ArtemisBankingPro.Application.ViewModels.AdminTarjeta.EditLimiteTarjetaViewModel
             {
-                try {
-                    string last4 = tarjeta.NumeroTarjeta.Substring(tarjeta.NumeroTarjeta.Length - 4);
-                    await _emailService.SendEmailAsync(cliente.Email, "Límite Actualizado", $"El nuevo límite de tu tarjeta ****{last4} es RD${newLimit:N2}.");
-                } catch {}
+                TarjetaId = tarjeta.Id,
+                NuevoLimite = tarjeta.LimiteCredito
+            };
+        }
+
+        public async Task<string> EditLimiteAsync(ArtemisBankingPro.Application.ViewModels.AdminTarjeta.EditLimiteTarjetaViewModel model)
+        {
+            var tarjeta = await _tarjetaRepository.GetByIdAsync(model.TarjetaId);
+            if (tarjeta == null) return "La tarjeta seleccionada no existe.";
+            if (tarjeta.Estado != "Activa") return "No se puede modificar una tarjeta cancelada.";
+            if (model.NuevoLimite <= 0) return "El límite de la tarjeta debe ser mayor que cero.";
+            if (model.NuevoLimite < tarjeta.MontoAdeudado) return "El límite de la tarjeta no puede ser inferior al monto adeudado actualmente.";
+
+            tarjeta.LimiteCredito = model.NuevoLimite;
+            await _tarjetaRepository.UpdateAsync(tarjeta, tarjeta.Id);
+
+            try
+            {
+                var cliente = await _usuarioRepo.GetByIdAsync(tarjeta.ClienteId);
+                string ultimos4 = tarjeta.NumeroTarjeta.Substring(12);
+                await _emailService.SendEmailAsync(cliente!.Email!, "Modificación de límite de tarjeta", $"El límite de su tarjeta de crédito terminada en {ultimos4} ha sido actualizado. Nuevo límite aprobado: {model.NuevoLimite}");
+            }
+            catch
+            {
+                return "El límite fue actualizado correctamente, pero no fue posible enviar el correo de notificación.";
             }
 
-            return (true, "Actualizado");
+            return string.Empty;
         }
 
-        public async Task<(bool Success, string Message)> CancelCreditCardAsync(string id)
+        public async Task<string> CancelTarjetaAsync(int id)
         {
-            if (!int.TryParse(id, out int cardId)) return (false, "Not Found");
-
-            var tarjeta = await _tarjetaRepository.GetByIdAsync(cardId);
-            if (tarjeta == null) return (false, "Not Found");
-            if (tarjeta.Estado != "Activa") return (false, "La tarjeta ya está cancelada o inactiva.");
-            if (tarjeta.MontoAdeudado > 0) return (false, "Para cancelar esta tarjeta, el cliente debe saldar la totalidad de la deuda pendiente.");
+            var tarjeta = await _tarjetaRepository.GetByIdAsync(id);
+            if (tarjeta == null) return "La tarjeta seleccionada no existe.";
+            if (tarjeta.MontoAdeudado > 0) return "Para cancelar esta tarjeta, el cliente debe saldar la totalidad de la deuda pendiente.";
 
             tarjeta.Estado = "Cancelada";
-            await _tarjetaRepository.UpdateAsync(tarjeta, cardId);
-
-            return (true, "Cancelada");
+            await _tarjetaRepository.UpdateAsync(tarjeta, tarjeta.Id);
+            return string.Empty;
         }
 
-        private async Task<string> GenerarNumeroTarjetaUnicoAsync()
+        public async Task<bool> ExisteClienteConCedulaAsync(string cedula)
         {
-            var random = new Random();
-            string numero;
-            bool existe;
-
-            do
-            {
-                var sb = new StringBuilder();
-                for (int i = 0; i < 16; i++)
-                {
-                    sb.Append(random.Next(0, 10));
-                }
-                numero = sb.ToString();
-
-                var todas = await _tarjetaRepository.GetAllAsync();
-                existe = todas.Any(t => t.NumeroTarjeta == numero);
-
-            } while (existe);
-
-            return numero;
+            var clientes = await _usuarioRepo.GetAllClientesAsync();
+            return clientes.Any(c => c.Cedula == cedula);
         }
 
-        private string HashSHA256(string rawData)
+        public async Task<List<ArtemisBankingPro.Application.ViewModels.AdminTarjeta.ConsumoTarjetaViewModel>> GetConsumosByTarjetaIdAsync(int tarjetaId, int clienteId)
         {
-            using var sha256Hash = SHA256.Create();
-            byte[] bytes = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(rawData));
-            var builder = new StringBuilder();
-            for (int i = 0; i < bytes.Length; i++)
+            // 1. Validar que la tarjeta pertenezca al cliente
+            var tarjetas = await _tarjetaRepository.GetAllAsync();
+            var tarjetaValida = tarjetas.Any(t => t.Id == tarjetaId && t.ClienteId == clienteId);
+
+            if (!tarjetaValida)
             {
-                builder.Append(bytes[i].ToString("x2"));
+                return new List<ArtemisBankingPro.Application.ViewModels.AdminTarjeta.ConsumoTarjetaViewModel>();
             }
-            return builder.ToString();
-        }
 
-    
+            // 2. Obtener los consumos y mapearlos al ViewModel fuerte
+            var consumos = await _consumoRepository.GetAllAsync();
+            
+            return consumos
+                .Where(c => c.TarjetaId == tarjetaId)
+                .OrderByDescending(c => c.FechaConsumo)
+                .Select(c => new ArtemisBankingPro.Application.ViewModels.AdminTarjeta.ConsumoTarjetaViewModel
+                {
+                    FechaConsumo = c.FechaConsumo,
+                    MontoConsumido = c.Monto,
+                    Comercio = c.Comercio,
+                    EstadoConsumo = c.Estado
+                })
+                .ToList();
+        }
     }
-}    
-    
+}

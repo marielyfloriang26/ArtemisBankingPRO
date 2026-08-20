@@ -68,9 +68,21 @@ public class AdminUserController : Controller
             return RedirectToAction(nameof(Index));
         }
 
+        if (string.IsNullOrWhiteSpace(tipoUsuario) || (tipoUsuario != "Administrador" && tipoUsuario != "Cajero" && tipoUsuario != "Cliente"))
+        {
+            TempData["Error"] = "El tipo de usuario debe ser Administrador, Cajero o Cliente.";
+            return RedirectToAction(nameof(Index));
+        }
+
         if (tipoUsuario == "Cliente" && montoInicial.HasValue && montoInicial < 0)
         {
             TempData["Error"] = "El monto inicial no puede ser negativo.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (tipoUsuario != "Cliente" && montoInicial.HasValue && montoInicial > 0)
+        {
+            TempData["Error"] = "Solo los clientes pueden tener un monto inicial asignado.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -118,8 +130,9 @@ public class AdminUserController : Controller
             Random rnd = new Random();
             do
             {
-                numeroCuenta = rnd.Next(100000000, 999999999).ToString();
-            } while (await _context.Set<CuentaAhorro>().AnyAsync(c => c.NumeroCuenta == numeroCuenta));
+                numeroCuenta = rnd.Next(100000000, 1000000000).ToString();
+            } while (await _context.Set<CuentaAhorro>().AnyAsync(c => c.NumeroCuenta == numeroCuenta) ||
+                     await _context.Set<Prestamo>().AnyAsync(p => p.NumeroPrestamo == numeroCuenta));
 
             var cuentaPrincipal = new CuentaAhorro
             {
@@ -154,7 +167,7 @@ public class AdminUserController : Controller
         try
         {
             string token = await _userManager.GenerateEmailConfirmationTokenAsync(nuevoUsuario);
-            string enlace = Url.Action("ActivarCuenta", "Account", new { userId = nuevoUsuario.Id, token = token }, Request.Scheme);
+            string? enlace = Url.Action("ActivarCuenta", "Account", new { userId = nuevoUsuario.Id, token = token }, Request.Scheme);
             string cuerpo = $"Hola {nombre},\n\nSu cuenta ha sido creada correctamente en Artemis Banking.\nPara activar su usuario, haga clic en el siguiente enlace:\n{enlace}\n\nSi usted no esperaba la creación de esta cuenta, ignore este mensaje.";
             
             await _emailService.SendEmailAsync(email, "Activación de cuenta", cuerpo);
@@ -173,7 +186,7 @@ public class AdminUserController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ToggleStatus(int id)
     {
-        var usuarioActualId = int.Parse(_userManager.GetUserId(User));
+        var usuarioActualId = int.Parse(_userManager.GetUserId(User) ?? "0");
         if (id == usuarioActualId)
         {
             TempData["Error"] = "No puede modificar el estado de su propia cuenta.";
@@ -197,7 +210,7 @@ public class AdminUserController : Controller
     // GET: AdminUser/Edit/5
     public async Task<IActionResult> Edit(int id)
     {
-        var usuarioActualId = int.Parse(_userManager.GetUserId(User));
+        var usuarioActualId = int.Parse(_userManager.GetUserId(User) ?? "0");
         if (id == usuarioActualId)
         {
             TempData["Error"] = "No puede editar su propia cuenta desde este módulo.";
@@ -219,6 +232,13 @@ public class AdminUserController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, string nombre, string apellido, string cedula, string email, string userName, string password, string confirmPassword, decimal? montoAdicional)
     {
+        var usuarioActualId = int.Parse(_userManager.GetUserId(User) ?? "0");
+        if (id == usuarioActualId)
+        {
+            TempData["Error"] = "No puede editar su propia cuenta desde este módulo.";
+            return RedirectToAction(nameof(Index));
+        }
+
         if (string.IsNullOrWhiteSpace(nombre) || string.IsNullOrWhiteSpace(apellido) || string.IsNullOrWhiteSpace(cedula) ||
             string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(userName))
         {

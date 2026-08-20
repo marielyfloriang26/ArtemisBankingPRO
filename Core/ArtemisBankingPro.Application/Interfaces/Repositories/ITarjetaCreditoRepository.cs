@@ -7,4 +7,5 @@ namespace ArtemisBankingPro.Application.Interfaces.Repositories;
 public interface ITarjetaCreditoRepository : IGenericRepository<TarjetaCredito>
 {
     Task<List<TarjetaCredito>> GetByClienteIdAsync(int clienteId);
+    Task<TarjetaCredito?> GetByNumeroTarjetaAsync(string numeroTarjeta);
 }

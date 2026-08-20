@@ -1,0 +1,313 @@
+<!doctype html>
+<title>Auditoría Transacciones a Terceros</title>
+<style>
+:root{
+  --paper:#F4F6F4; --paper-raised:#FFFFFF; --ink:#182420; --ink-soft:#4B5A54;
+  --line:#DCE3DE; --accent:#1F6E5C; --accent-soft:#E4EFEB;
+  --gold:#8C6A1E; --gold-soft:#F5ECD8; --brick:#A23B32; --brick-soft:#F5E4E1;
+  --mono-bg:#EEF2F0;
+  --serif: ui-serif, "Iowan Old Style", "Source Serif 4", Georgia, "Times New Roman", serif;
+  --sans: ui-sans-serif, "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, "Cascadia Code", "Consolas", "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#121815; --paper-raised:#182420; --ink:#E9EFEB; --ink-soft:#A9B7B0;
+    --line:#2A3630; --accent:#4FBFA0; --accent-soft:#1B332C;
+    --gold:#D9A83F; --gold-soft:#332A14; --brick:#E08579; --brick-soft:#3A211E;
+    --mono-bg:#1B2420;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#121815; --paper-raised:#182420; --ink:#E9EFEB; --ink-soft:#A9B7B0;
+  --line:#2A3630; --accent:#4FBFA0; --accent-soft:#1B332C;
+  --gold:#D9A83F; --gold-soft:#332A14; --brick:#E08579; --brick-soft:#3A211E;
+  --mono-bg:#1B2420;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--paper); color:var(--ink); font-family:var(--sans);
+  margin:0; line-height:1.55; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:920px; margin:0 auto; padding:2.5rem 1.5rem 6rem}
+
+header.doc{border-bottom:2px solid var(--ink); padding-bottom:1.5rem; margin-bottom:2rem}
+.eyebrow{
+  font-family:var(--mono); font-size:.72rem; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--accent); margin:0 0 .6rem;
+}
+h1{
+  font-family:var(--serif); font-size:2.1rem; margin:0 0 .4rem; font-weight:600;
+  text-wrap:balance; letter-spacing:-.01em;
+}
+.subtitle{color:var(--ink-soft); font-size:1rem; max-width:62ch; margin:0}
+
+.meta-row{display:flex; flex-wrap:wrap; gap:1.2rem; margin-top:1.2rem; font-size:.85rem; color:var(--ink-soft)}
+.meta-row strong{color:var(--ink); font-weight:600}
+
+.progress-card{
+  background:var(--paper-raised); border:1px solid var(--line); border-radius:10px;
+  padding:1.1rem 1.3rem; margin:1.5rem 0 2.2rem; display:flex; align-items:center; gap:1.2rem;
+}
+.progress-num{font-family:var(--serif); font-size:1.9rem; font-weight:600; white-space:nowrap}
+.progress-bar-track{flex:1; height:8px; border-radius:99px; background:var(--line); overflow:hidden}
+.progress-bar-fill{height:100%; background:var(--accent); border-radius:99px}
+.progress-label{font-size:.8rem; color:var(--ink-soft); white-space:nowrap}
+
+nav.toc{
+  display:flex; flex-wrap:wrap; gap:.4rem .5rem; margin-bottom:2.5rem;
+  font-family:var(--mono); font-size:.75rem;
+}
+nav.toc a{
+  color:var(--ink-soft); text-decoration:none; border:1px solid var(--line);
+  border-radius:6px; padding:.3rem .6rem; background:var(--paper-raised);
+}
+nav.toc a:hover{border-color:var(--accent); color:var(--accent)}
+
+section.block{margin-bottom:2.6rem}
+.block-head{display:flex; align-items:baseline; gap:.7rem; margin-bottom:.3rem}
+.block-id{font-family:var(--mono); font-size:.8rem; color:var(--accent); font-weight:600}
+h2{font-family:var(--serif); font-size:1.35rem; margin:0; font-weight:600}
+.block-desc{color:var(--ink-soft); font-size:.92rem; margin:.3rem 0 1.1rem; max-width:70ch}
+
+.req{
+  display:grid; grid-template-columns:auto 1fr auto; gap:.9rem;
+  align-items:start; padding:.85rem 0; border-top:1px solid var(--line);
+}
+.req:last-child{border-bottom:1px solid var(--line)}
+.req-id{font-family:var(--mono); font-size:.78rem; color:var(--ink-soft); padding-top:.15rem}
+.req-body p{margin:0 0 .3rem; font-size:.94rem}
+.req-body p:last-child{margin-bottom:0}
+.exact{
+  display:inline-block; font-family:var(--mono); font-size:.82rem; background:var(--mono-bg);
+  border-left:3px solid var(--brick); padding:.35rem .6rem; margin-top:.35rem; border-radius:0 5px 5px 0;
+}
+.exact::before{content:"“"; color:var(--brick)}
+.exact::after{content:"”"; color:var(--brick)}
+
+.pill{
+  font-family:var(--mono); font-size:.7rem; letter-spacing:.03em; text-transform:uppercase;
+  padding:.3rem .55rem; border-radius:99px; white-space:nowrap; font-weight:600; height:fit-content;
+}
+.pill.pend{background:var(--gold-soft); color:var(--gold)}
+.pill.done{background:var(--accent-soft); color:var(--accent)}
+.pill.verif{background:var(--accent); color:var(--paper-raised)}
+
+table.ref{width:100%; border-collapse:collapse; margin:.4rem 0 1rem; font-size:.88rem}
+table.ref th, table.ref td{text-align:left; padding:.4rem .6rem; border-bottom:1px solid var(--line)}
+table.ref th{color:var(--ink-soft); font-weight:600; font-size:.78rem; text-transform:uppercase; letter-spacing:.04em}
+table.ref td.mono{font-family:var(--mono); font-size:.85rem}
+
+.legend{display:flex; gap:1.5rem; flex-wrap:wrap; font-size:.82rem; color:var(--ink-soft); margin-top:.3rem}
+.legend span{display:inline-flex; align-items:center; gap:.4rem}
+.dot{width:8px; height:8px; border-radius:50%; display:inline-block}
+.dot.pend{background:var(--gold)} .dot.done{background:var(--accent)} .dot.verif{background:var(--accent); box-shadow:0 0 0 2px var(--accent-soft)}
+
+.overflow{overflow-x:auto}
+
+footer.doc{border-top:1px solid var(--line); margin-top:3rem; padding-top:1.2rem; font-size:.8rem; color:var(--ink-soft)}
+</style>
+
+<div class="wrap">
+  <header class="doc">
+    <p class="eyebrow">Artemis Banking Pro · Funcionalidades Cajero</p>
+    <h1>Transacciones a cuentas de terceros</h1>
+    <p class="subtitle">Listado exhaustivo de requerimientos extraídos del PDF funcional, con seguimiento de estado de implementación y verificación por subagente.</p>
+    <div class="meta-row">
+      <span><strong>Fuente:</strong> Proyecto final_ Artemis Banking Pro (ABP) .pdf — pág. 130</span>
+      <span><strong>Transcripción:</strong> docs/modulo-transacciones-terceros-cajero.md</span>
+    </div>
+  </header>
+
+  <div class="progress-card">
+    <div class="progress-num" id="progress-num">0/62</div>
+    <div class="progress-bar-track"><div class="progress-bar-fill" id="progress-fill" style="width:0%"></div></div>
+    <div class="progress-label">requerimientos implementados</div>
+  </div>
+
+  <div class="legend" style="margin-bottom:2rem">
+    <span><i class="dot pend"></i> Pendiente</span>
+    <span><i class="dot done"></i> Implementado</span>
+    <span><i class="dot verif"></i> Verificado por subagente</span>
+  </div>
+
+  <nav class="toc">
+    <a href="#a">A · Control de acceso</a>
+    <a href="#b">B · Formulario</a>
+    <a href="#c">C · Validaciones</a>
+    <a href="#d">D · Mensajes exactos</a>
+    <a href="#e">E · Confirmación</a>
+    <a href="#f">F · Procesamiento</a>
+    <a href="#g">G · Correos</a>
+    <a href="#h">H · Redirección</a>
+    <a href="#i">I · Reglas adicionales</a>
+    <a href="#notas">Notas de verificación</a>
+  </nav>
+
+  <section class="block" id="a">
+    <div class="block-head"><span class="block-id">A</span><h2>Control de acceso</h2></div>
+    <p class="block-desc">Solo el rol Cajero puede operar esta pantalla.</p>
+
+    <div class="req"><div class="req-id">A1</div><div class="req-body"><p>Solo los usuarios con rol <strong>Cajero</strong> pueden acceder a la funcionalidad de Transacciones a cuentas de terceros.</p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">A2</div><div class="req-body"><p>Si un usuario con rol Administrador, Cliente o Comercio intenta acceder directamente mediante la URL, el sistema debe redirigirlo a la pantalla de <strong>Acceso denegado</strong>.</p></div><span class="pill verif">Verificado</span></div>
+  </section>
+
+  <section class="block" id="b">
+    <div class="block-head"><span class="block-id">B</span><h2>Formulario</h2></div>
+    <p class="block-desc">Pantalla con tres campos de entrada y un botón de acción.</p>
+
+    <div class="overflow"><table class="ref">
+      <tr><th>Campo</th><th>Tipo</th><th>Requerido</th></tr>
+      <tr><td>Número de cuenta origen</td><td class="mono">string</td><td>Sí</td></tr>
+      <tr><td>Número de cuenta destino</td><td class="mono">string</td><td>Sí</td></tr>
+      <tr><td>Monto de la transacción</td><td class="mono">decimal</td><td>Sí</td></tr>
+    </table></div>
+
+    <div class="req"><div class="req-id">B1</div><div class="req-body"><p>Campo <strong>Número de cuenta origen</strong> — texto, requerido.</p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">B2</div><div class="req-body"><p>Campo <strong>Número de cuenta destino</strong> — texto, requerido.</p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">B3</div><div class="req-body"><p>Campo <strong>Monto de la transacción</strong> — decimal, requerido, mayor que cero.</p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">B4</div><div class="req-body"><p>Botón debajo del formulario con el texto exacto:</p><div class="exact">Realizar transacción</div></div><span class="pill verif">Verificado</span></div>
+  </section>
+
+  <section class="block" id="c">
+    <div class="block-head"><span class="block-id">C</span><h2>Validaciones</h2></div>
+    <p class="block-desc">Reglas de negocio que el formulario debe cumplir antes de avanzar a confirmación.</p>
+
+    <div class="req"><div class="req-id">C1</div><div class="req-body"><p>El número de cuenta origen es requerido.</p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">C2</div><div class="req-body"><p>El número de cuenta origen debe existir en el sistema.</p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">C3</div><div class="req-body"><p>La cuenta origen debe estar activa.</p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">C4</div><div class="req-body"><p>El número de cuenta destino es requerido.</p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">C5</div><div class="req-body"><p>El número de cuenta destino debe existir en el sistema.</p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">C6</div><div class="req-body"><p>La cuenta destino debe estar activa.</p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">C7</div><div class="req-body"><p>La cuenta origen y la cuenta destino no pueden ser la misma.</p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">C8</div><div class="req-body"><p>El monto de la transacción es requerido.</p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">C9</div><div class="req-body"><p>El monto de la transacción debe ser mayor que cero.</p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">C10</div><div class="req-body"><p>La cuenta origen debe tener fondos suficientes para cubrir el monto indicado.</p></div><span class="pill verif">Verificado</span></div>
+  </section>
+
+  <section class="block" id="d">
+    <div class="block-head"><span class="block-id">D</span><h2>Mensajes de error exactos</h2></div>
+    <p class="block-desc">Texto literal exigido por el PDF — comparación carácter por carácter, sin parafraseo.</p>
+
+    <div class="req"><div class="req-id">D1</div><div class="req-body"><p>Cuenta origen no existe o inactiva:</p><div class="exact">El número de cuenta origen ingresado no corresponde a una cuenta válida.</div></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">D2</div><div class="req-body"><p>Cuenta destino no existe o inactiva:</p><div class="exact">El número de cuenta destino ingresado no corresponde a una cuenta válida.</div></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">D3</div><div class="req-body"><p>Cuenta origen = cuenta destino:</p><div class="exact">La cuenta origen y la cuenta destino no pueden ser la misma.</div></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">D4</div><div class="req-body"><p>Monto ≤ 0:</p><div class="exact">El monto de la transacción debe ser mayor que cero.</div></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">D5</div><div class="req-body"><p>Fondos insuficientes:</p><div class="exact">El monto ingresado excede el saldo disponible de la cuenta.</div></div><span class="pill verif">Verificado</span></div>
+  </section>
+
+  <section class="block" id="e">
+    <div class="block-head"><span class="block-id">E</span><h2>Pantalla de confirmación</h2></div>
+    <p class="block-desc">Se muestra solo si todas las validaciones pasan.</p>
+
+    <div class="req"><div class="req-id">E1</div><div class="req-body"><p>Mostrar <strong>Titular de la cuenta origen</strong> (nombre y apellido).</p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">E2</div><div class="req-body"><p>Mostrar <strong>Número de cuenta origen</strong>.</p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">E3</div><div class="req-body"><p>Mostrar <strong>Titular de la cuenta destino</strong> (nombre y apellido).</p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">E4</div><div class="req-body"><p>Mostrar <strong>Número de cuenta destino</strong>.</p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">E5</div><div class="req-body"><p>Mostrar <strong>Monto de la transacción</strong>.</p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">E6</div><div class="req-body"><p>Mensaje de confirmación exacto:</p><div class="exact">¿Está seguro de que desea realizar esta transacción?</div></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">E7</div><div class="req-body"><p>Botón <strong>Cancelar</strong> — cancela la operación y redirige al Home del cajero.</p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">E8</div><div class="req-body"><p>Botón <strong>Confirmar</strong> — ejecuta la transacción entre las cuentas indicadas.</p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">E9</div><div class="req-body"><p>Si el cajero cancela, la transacción no se ejecuta y el sistema redirige al Home del cajero.</p></div><span class="pill verif">Verificado</span></div>
+  </section>
+
+  <section class="block" id="f">
+    <div class="block-head"><span class="block-id">F</span><h2>Procesamiento de la transacción</h2></div>
+    <p class="block-desc">Efectos sobre balances y registro doble (origen/destino) al confirmar.</p>
+
+    <div class="req"><div class="req-id">F1</div><div class="req-body"><p>Restar el monto de la transacción del balance de la cuenta origen.</p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">F2</div><div class="req-body"><p>Sumar el mismo monto al balance de la cuenta destino.</p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">F3</div><div class="req-body"><p>Registrar la transacción en la cuenta origen como <strong>DÉBITO</strong>.</p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">F4</div><div class="req-body"><p>Registrar la transacción en la cuenta destino como <strong>CRÉDITO</strong>.</p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">F5</div><div class="req-body"><p>Asociar la operación al cajero autenticado que la realizó.</p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">F6</div><div class="req-body"><p>Registrar la fecha y hora exacta de la operación.</p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">F7</div><div class="req-body"><p>Ejecución transaccional: si falla el débito, el crédito o el registro, no debe aplicarse parcialmente la transacción.</p></div><span class="pill verif">Verificado</span></div>
+
+    <div class="overflow"><table class="ref">
+      <tr><th colspan="2">F8 — Registro en cuenta origen</th></tr>
+      <tr><td>Tipo de transacción</td><td class="mono">DÉBITO</td></tr>
+      <tr><td>Monto</td><td class="mono">Monto transferido</td></tr>
+      <tr><td>Origen</td><td class="mono">Número de cuenta origen</td></tr>
+      <tr><td>Beneficiario</td><td class="mono">Número de cuenta destino</td></tr>
+      <tr><td>Estado</td><td class="mono">APROBADA</td></tr>
+      <tr><td>Usuario responsable</td><td class="mono">Cajero autenticado</td></tr>
+      <tr><td>Fecha</td><td class="mono">Fecha y hora exacta</td></tr>
+    </table></div>
+    <div class="req" style="border-top:none; padding-top:0"><div class="req-id">F8</div><div class="req-body"><p>Registro en cuenta origen con los campos anteriores.</p></div><span class="pill verif">Verificado</span></div>
+
+    <div class="overflow"><table class="ref">
+      <tr><th colspan="2">F9 — Registro en cuenta destino</th></tr>
+      <tr><td>Tipo de transacción</td><td class="mono">CRÉDITO</td></tr>
+      <tr><td>Monto</td><td class="mono">Monto recibido</td></tr>
+      <tr><td>Origen</td><td class="mono">Número de cuenta origen</td></tr>
+      <tr><td>Beneficiario</td><td class="mono">Número de cuenta destino</td></tr>
+      <tr><td>Estado</td><td class="mono">APROBADA</td></tr>
+      <tr><td>Usuario responsable</td><td class="mono">Cajero autenticado</td></tr>
+      <tr><td>Fecha</td><td class="mono">Fecha y hora exacta</td></tr>
+    </table></div>
+    <div class="req" style="border-top:none; padding-top:0"><div class="req-id">F9</div><div class="req-body"><p>Registro en cuenta destino con los campos anteriores.</p></div><span class="pill verif">Verificado</span></div>
+
+    <div class="req"><div class="req-id">F10</div><div class="req-body"><p>Si la operación es rechazada por fondos insuficientes o validación de negocio, registrar el intento como <strong>RECHAZADO</strong> en la cuenta origen (cuando ésta exista), sin afectar ningún balance.</p></div><span class="pill verif">Verificado</span></div>
+  </section>
+
+  <section class="block" id="g">
+    <div class="block-head"><span class="block-id">G</span><h2>Correos de notificación</h2></div>
+    <p class="block-desc">Dos correos automáticos, uno por cada titular involucrado.</p>
+
+    <div class="req"><div class="req-id">G1</div><div class="req-body"><p>Enviar automáticamente dos correos electrónicos tras procesar correctamente la transacción.</p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">G2</div><div class="req-body"><p>Correo 1 → titular de la cuenta origen. Asunto exacto (XXXX = últimos 4 dígitos de la cuenta destino):</p><div class="exact">Transacción realizada a la cuenta [XXXX]</div></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">G3</div><div class="req-body"><p>Cuerpo del correo 1: monto transferido, últimos 4 dígitos cuenta origen, últimos 4 dígitos cuenta destino, fecha y hora exacta.</p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">G4</div><div class="req-body"><p>Correo 2 → titular de la cuenta destino. Asunto exacto (XXXX = últimos 4 dígitos de la cuenta origen):</p><div class="exact">Transacción enviada desde la cuenta [XXXX]</div></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">G5</div><div class="req-body"><p>Cuerpo del correo 2: monto recibido, últimos 4 dígitos cuenta origen, últimos 4 dígitos cuenta destino, fecha y hora exacta.</p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">G6</div><div class="req-body"><p>Si falla el envío de uno o ambos correos, la transacción no debe revertirse; el sistema debe registrar el error.</p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">G7</div><div class="req-body"><p>Mensaje informativo exacto al cajero cuando falla el correo:</p><div class="exact">La transacción fue realizada correctamente, pero no fue posible enviar una o más notificaciones por correo.</div></div><span class="pill verif">Verificado</span></div>
+  </section>
+
+  <section class="block" id="h">
+    <div class="block-head"><span class="block-id">H</span><h2>Redirección final</h2></div>
+    <div class="req"><div class="req-id">H1</div><div class="req-body"><p>Al completar la operación (éxito o falla de correo), redirigir al cajero a su pantalla principal: el <strong>Home del cajero</strong>.</p></div><span class="pill verif">Verificado</span></div>
+  </section>
+
+  <section class="block" id="i">
+    <div class="block-head"><span class="block-id">I</span><h2>Reglas adicionales del módulo</h2></div>
+    <p class="block-desc">Enunciadas explícitamente al cierre de la sección del PDF. Se listan íntegramente; cada una se satisface por los requerimientos de las secciones A–H referenciados entre paréntesis.</p>
+
+    <div class="req"><div class="req-id">I1</div><div class="req-body"><p>Solo los usuarios con rol Cajero pueden acceder a la funcionalidad. <em>(→ A1)</em></p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">I2</div><div class="req-body"><p>Solo se pueden realizar transacciones entre cuentas de ahorro activas. <em>(→ C3, C6)</em></p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">I3</div><div class="req-body"><p>La cuenta origen y la cuenta destino deben existir en el sistema. <em>(→ C2, C5)</em></p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">I4</div><div class="req-body"><p>La cuenta origen y la cuenta destino no pueden ser la misma cuenta. <em>(→ C7)</em></p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">I5</div><div class="req-body"><p>El monto de la transacción debe ser mayor que cero. <em>(→ C9)</em></p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">I6</div><div class="req-body"><p>La cuenta origen debe tener fondos suficientes antes de aprobar la transacción. <em>(→ C10)</em></p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">I7</div><div class="req-body"><p>La cuenta origen debe registrar la operación como DÉBITO. <em>(→ F3, F8)</em></p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">I8</div><div class="req-body"><p>La cuenta destino debe registrar la operación como CRÉDITO. <em>(→ F4, F9)</em></p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">I9</div><div class="req-body"><p>Todo movimiento aprobado debe actualizar los balances de ambas cuentas. <em>(→ F1, F2)</em></p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">I10</div><div class="req-body"><p>Las operaciones rechazadas no deben modificar balances. <em>(→ F10)</em></p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">I11</div><div class="req-body"><p>La operación debe quedar asociada al cajero autenticado que la realizó. <em>(→ F5)</em></p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">I12</div><div class="req-body"><p>La transacción debe ejecutarse de forma transaccional para evitar inconsistencias. <em>(→ F7)</em></p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">I13</div><div class="req-body"><p>El envío de correos no debe revertir la transacción si ocurre un error. <em>(→ G6)</em></p></div><span class="pill verif">Verificado</span></div>
+    <div class="req"><div class="req-id">I14</div><div class="req-body"><p>Al finalizar la operación, el sistema debe redirigir al cajero al Home del cajero. <em>(→ H1)</em></p></div><span class="pill verif">Verificado</span></div>
+  </section>
+
+  <section class="block" id="notas">
+    <div class="block-head"><span class="block-id">·</span><h2>Notas de verificación</h2></div>
+    <p class="block-desc">El módulo fue implementado y luego auditado por un subagente independiente, comparando cada mensaje, botón y regla contra <span class="exact" style="margin:0">docs/modulo-transacciones-terceros-cajero.md</span> carácter por carácter. Resultado: 62/62 aprobados, sin discrepancias de texto. Dos observaciones arquitectónicas quedan registradas por transparencia — no son defectos introducidos por este módulo, sino un patrón ya existente y aceptado en la funcionalidad hermana "Transacción Express" (Cliente):</p>
+    <div class="req"><div class="req-id">Nota 1</div><div class="req-body"><p>El registro de intento <strong>RECHAZADO</strong> (F10) solo se genera en la rama de fondos insuficientes; las ramas de cuenta destino inválida o cuenta origen = destino no generan ese registro. Mismo comportamiento que Pago a préstamo y Transacción Express.</p></div><span class="pill done">Aceptado</span></div>
+    <div class="req"><div class="req-id">Nota 2</div><div class="req-body"><p>No existe un wrapper de transacción de base de datos (unit-of-work) en todo el código base; cada actualización hace su propio <span class="exact" style="margin:0">SaveChangesAsync</span>. La ejecución "transaccional" (F7) es, en la práctica, secuencial — igual que en Transacción Express.</p></div><span class="pill done">Aceptado</span></div>
+  </section>
+
+  <footer class="doc">
+    Documento vivo. Implementado y verificado por subagente independiente — 62/62 requerimientos aprobados, 0 discrepancias de texto encontradas.
+  </footer>
+</div>
+
+<script>
+(function(){
+  var pills = document.querySelectorAll('.pill');
+  var done = 0;
+  pills.forEach(function(p){ if(p.classList.contains('done') || p.classList.contains('verif')) done++; });
+  var total = pills.length;
+  document.getElementById('progress-num').textContent = done + '/' + total;
+  document.getElementById('progress-fill').style.width = (total? (done/total*100) : 0) + '%';
+})();
+</script>

@@ -8,6 +8,8 @@ using ArtemisBankingPro.Infrastructure.Persistence;
 using Microsoft.OpenApi.Models;
 using ArtemisBankingPro.Application;
 using ArtemisBankingPro.Infrastructure.Shared;
+using ArtemisBankingPro.Presentation.WebApi.DTOs;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,9 +36,36 @@ builder.Services.AddAuthentication(options => {
         ValidateAudience = false,
         ValidateLifetime = true
     };
+
+    // Personalización para asegurar códigos y respuestas JSON exactas en fallos de autenticación/autorización
+    options.Events = new JwtBearerEvents
+    {
+        OnChallenge = context =>
+        {
+            context.HandleResponse();
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            context.Response.ContentType = "application/json";
+            var result = System.Text.Json.JsonSerializer.Serialize(new ErrorResponseDto("No tiene autorización para acceder a este recurso."));
+            return context.Response.WriteAsync(result);
+        },
+        OnForbidden = context =>
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            context.Response.ContentType = "application/json";
+            var result = System.Text.Json.JsonSerializer.Serialize(new ErrorResponseDto("Acceso denegado. No tiene permisos para utilizar este recurso."));
+            return context.Response.WriteAsync(result);
+        }
+    };
 });
 
 builder.Services.AddControllers();
+
+// Los fallos de binding del framework deben responder con la misma forma de error que el resto de la API.
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+        new BadRequestObjectResult(new ErrorResponseDto("Datos faltantes o inválidos."));
+});
 
 // CONFIGURACIÓN DE SWAGGER
 builder.Services.AddEndpointsApiExplorer();
