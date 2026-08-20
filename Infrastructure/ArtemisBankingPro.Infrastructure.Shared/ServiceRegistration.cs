@@ -13,6 +13,7 @@ public static class ServiceRegistration
 
         services.AddHostedService<DailyQuotaCheckService>();
 
+        services.Configure<SmtpSettings>(configuration.GetSection("SmtpSettings"));
         services.AddTransient<IEmailService, EmailService>();
     }
 }
