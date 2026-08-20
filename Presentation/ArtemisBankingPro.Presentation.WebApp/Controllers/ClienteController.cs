@@ -115,6 +115,10 @@ namespace ArtemisBankingPro.Presentation.WebApp.Controllers
                 return View(vm);
             }
 
+            var cuentasCliente = await _cuentaAhorroService.GetActiveCuentasByClientIdAsync(clienteId);
+            var cuentaOrigen = cuentasCliente.FirstOrDefault(c => c.Id == vm.CuentaOrigenId);
+            ViewBag.NumeroCuentaOrigen = cuentaOrigen?.NumeroCuenta;
+            
             return View("TransferenciaConfirmacion", vm);
         }
 
@@ -134,7 +138,7 @@ namespace ArtemisBankingPro.Presentation.WebApp.Controllers
             if (result.Success)
             {
                 TempData["SuccessMessage"] = "Transferencia realizada con éxito.";
-                return RedirectToAction("Transferencia");
+                return RedirectToAction("Index");
             }
 
             ModelState.AddModelError(string.Empty, result.ErrorMessage);
