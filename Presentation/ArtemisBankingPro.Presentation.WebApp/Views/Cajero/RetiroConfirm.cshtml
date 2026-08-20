@@ -1,0 +1,40 @@
+@model ArtemisBankingPro.Application.ViewModels.Cajero.RetiroViewModel
+@{
+    ViewData["Title"] = "Confirmar Retiro";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Confirmar Retiro</h4>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-5">Titular de la cuenta:</dt>
+                        <dd class="col-sm-7">@Model.TitularCuenta</dd>
+
+                        <dt class="col-sm-5">Número de cuenta:</dt>
+                        <dd class="col-sm-7">@Model.NumeroCuenta</dd>
+
+                        <dt class="col-sm-5">Monto a retirar:</dt>
+                        <dd class="col-sm-7">@Model.Monto.ToString("C")</dd>
+                    </dl>
+
+                    <p class="mt-3">¿Está seguro que desea realizar este retiro?</p>
+
+                    <form asp-action="RetiroConfirm" method="post">
+                        <input type="hidden" asp-for="NumeroCuenta" />
+                        <input type="hidden" asp-for="Monto" />
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Confirmar</button>
+                            <a asp-action="Home" class="btn btn-light">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

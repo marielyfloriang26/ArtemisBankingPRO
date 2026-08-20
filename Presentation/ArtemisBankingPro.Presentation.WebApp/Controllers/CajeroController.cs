@@ -50,22 +50,28 @@ public class CajeroController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> Deposito(DepositoViewModel vm)
+    [HttpPost]
+public async Task<IActionResult> Deposito(DepositoViewModel vm)
+{
+    if (!ModelState.IsValid) return View(vm);
+
+    var (error, confirm) = await _transaccionCajeroService.PreviewDepositoAsync(GetCurrentUserId(), vm);
+    if (error != null)
     {
-        if (!ModelState.IsValid)
-            return View(vm);
-
-        var result = await _cuentaAhorroService.RealizarDepositoAsync(vm, GetCurrentUserId());
-
-        if (result.Success)
-        {
-            TempData["SuccessMessage"] = $"Depósito de RD${vm.Monto} a la cuenta {vm.NumeroCuenta} realizado exitosamente.";
-            return RedirectToAction("Deposito");
-        }
-
-        ModelState.AddModelError(string.Empty, result.ErrorMessage);
+        TempData["ErrorMessage"] = error;
         return View(vm);
     }
+    return View("DepositoConfirm", confirm);
+}
+
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> DepositoConfirm(DepositoViewModel model)
+{
+    var result = await _transaccionCajeroService.EjecutarDepositoAsync(GetCurrentUserId(), model);
+    TempData[result.Success ? (result.CorreoFallido ? "WarningMessage" : "SuccessMessage") : "ErrorMessage"] = result.Message;
+    return RedirectToAction("Home");
+}
 
     #endregion
 
@@ -79,15 +85,23 @@ public class CajeroController : Controller
     {
         if (!ModelState.IsValid) return View(vm);
 
-        var result = await _cuentaAhorroService.RealizarRetiroAsync(vm, GetCurrentUserId());
-        if (result.Success)
+        var (error, confirm) = await _transaccionCajeroService.PreviewRetiroAsync(GetCurrentUserId(), vm);
+        if (error != null)
         {
-            TempData["SuccessMessage"] = $"Retiro de RD${vm.Monto} realizado exitosamente.";
-            return RedirectToAction("Retiro");
+            TempData["ErrorMessage"] = error;
+            return View(vm);
         }
 
-        ModelState.AddModelError(string.Empty, result.ErrorMessage);
-        return View(vm);
+        return View("RetiroConfirm", confirm);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RetiroConfirm(RetiroViewModel model)
+    {
+        var result = await _transaccionCajeroService.EjecutarRetiroAsync(GetCurrentUserId(), model);
+        TempData[result.Success ? (result.CorreoFallido ? "WarningMessage" : "SuccessMessage") : "ErrorMessage"] = result.Message;
+        return RedirectToAction("Home");
     }
 
     #endregion
@@ -102,15 +116,23 @@ public class CajeroController : Controller
     {
         if (!ModelState.IsValid) return View(vm);
 
-        var result = await _tarjetaCreditoService.RealizarPagoAsync(vm, GetCurrentUserId());
-        if (result.Success)
+        var (error, confirm) = await _transaccionCajeroService.PreviewPagoTarjetaCajeroAsync(GetCurrentUserId(), vm);
+        if (error != null)
         {
-            TempData["SuccessMessage"] = $"Pago de RD${vm.Monto} a la tarjeta realizado exitosamente.";
-            return RedirectToAction("PagoTarjeta");
+            TempData["ErrorMessage"] = error;
+            return View(vm);
         }
 
-        ModelState.AddModelError(string.Empty, result.ErrorMessage);
-        return View(vm);
+        return View("PagoTarjetaConfirm", confirm);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> PagoTarjetaConfirm(PagoTarjetaViewModel model)
+    {
+        var result = await _transaccionCajeroService.EjecutarPagoTarjetaCajeroAsync(GetCurrentUserId(), model);
+        TempData[result.Success ? (result.CorreoFallido ? "WarningMessage" : "SuccessMessage") : "ErrorMessage"] = result.Message;
+        return RedirectToAction("Home");
     }
 
     #endregion
