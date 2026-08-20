@@ -1,3 +1,4 @@
+using ArtemisBankingPro.Application.ViewModels.Cajero;
 using ArtemisBankingPro.Application.ViewModels.Transacciones;
 using System.Threading.Tasks;
 
@@ -12,4 +13,13 @@ public interface ITransaccionCajeroService
     // Transacciones a cuentas de terceros
     Task<(string? error, TransaccionTercerosCajeroConfirmViewModel? confirm)> PreviewTransaccionTercerosAsync(int cajeroId, TransaccionTercerosCajeroFormViewModel model);
     Task<OperationResultViewModel> EjecutarTransaccionTercerosAsync(int cajeroId, TransaccionTercerosCajeroConfirmViewModel model);
+
+    Task<(string? error, DepositoViewModel? confirm)> PreviewDepositoAsync(int cajeroId, DepositoViewModel model);
+    Task<OperationResultViewModel> EjecutarDepositoAsync(int cajeroId, DepositoViewModel model);
+
+    Task<(string? error, RetiroViewModel? confirm)> PreviewRetiroAsync(int cajeroId, RetiroViewModel model);
+    Task<OperationResultViewModel> EjecutarRetiroAsync(int cajeroId, RetiroViewModel model);
+
+    Task<(string? error, PagoTarjetaViewModel? confirm)> PreviewPagoTarjetaCajeroAsync(int cajeroId, PagoTarjetaViewModel model);
+    Task<OperationResultViewModel> EjecutarPagoTarjetaCajeroAsync(int cajeroId, PagoTarjetaViewModel model);
 }

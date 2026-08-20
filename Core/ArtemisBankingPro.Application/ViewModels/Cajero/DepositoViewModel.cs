@@ -12,5 +12,7 @@ namespace ArtemisBankingPro.Application.ViewModels.Cajero
         [Range(0.01, double.MaxValue, ErrorMessage = "El monto debe ser mayor a cero.")]
         [Display(Name = "Monto (RD$)")]
         public decimal Monto { get; set; }
+        public int CuentaId { get; set; }
+        public string? TitularCuenta { get; set; }
     }
 }
