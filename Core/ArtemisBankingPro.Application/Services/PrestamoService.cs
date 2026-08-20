@@ -422,4 +422,12 @@ public class PrestamoService : IPrestamoService
         if (prestamo == null) return null;
         return await GetPrestamoDetailsAsync(prestamo.Id);
     }
+
+
+    public async Task<List<dynamic>> GetTablaAmortizacionByPrestamoIdAsync(int prestamoId, int clienteId)
+    {
+        // TODO: Implementar la consulta para obtener la tabla de amortización 
+        // del préstamo validando que pertenezca al clienteId.
+        return new List<dynamic>();
+    }
 }

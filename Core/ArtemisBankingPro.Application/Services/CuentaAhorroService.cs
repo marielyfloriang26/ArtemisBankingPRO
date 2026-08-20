@@ -170,5 +170,14 @@ namespace ArtemisBankingPro.Application.Services
         return (false, "Error al procesar el retiro.");
     }
 }
+
+
+    public async Task<List<dynamic>> GetTransaccionesByCuentaIdAsync(int cuentaId, int clienteId)
+    {
+        // TODO: Implementar la consulta a la base de datos para obtener las transacciones 
+        // de la cuenta asegurándote de que pertenezcan al clienteId.
+        return new List<dynamic>();
+    }
+
     }
 }

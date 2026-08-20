@@ -413,5 +413,12 @@ namespace ArtemisBankingPro.Application.Services
             var clientes = await _usuarioRepo.GetAllClientesAsync();
             return clientes.Any(c => c.Cedula == cedula);
         }
+
+        public async Task<List<dynamic>> GetConsumosByTarjetaIdAsync(int tarjetaId, int clienteId)
+        {
+            // TODO: Implementar la consulta para obtener los consumos 
+            // de la tarjeta de crédito validando que pertenezcan al clienteId.
+            return new List<dynamic>();
+        }
     }
 }

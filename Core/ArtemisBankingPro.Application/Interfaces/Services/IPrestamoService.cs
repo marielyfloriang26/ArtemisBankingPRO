@@ -21,4 +21,5 @@ public interface IPrestamoService
     Task<string> ValidarElegibilidadPrestamoAsync(int clienteId);
     Task<RiesgoPrestamoResultado> EvaluarRiesgoAsync(int clienteId, decimal monto, decimal tasaAnual, int plazo);
     Task<PrestamoViewModel?> GetPrestamoActivoByClienteIdAsync(int clienteId);
+    Task<List<dynamic>> GetTablaAmortizacionByPrestamoIdAsync(int prestamoId, int clienteId);
 }

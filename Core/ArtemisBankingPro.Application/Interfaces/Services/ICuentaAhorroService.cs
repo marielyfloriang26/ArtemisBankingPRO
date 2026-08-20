@@ -13,5 +13,7 @@ namespace ArtemisBankingPro.Application.Interfaces.Services
         Task<(bool Success, string ErrorMessage)> RealizarDepositoAsync(ViewModels.Cajero.DepositoViewModel model, int cajeroId);
 
         Task<(bool Success, string ErrorMessage)> RealizarRetiroAsync(ViewModels.Cajero.RetiroViewModel model, int cajeroId);
+
+        Task<List<dynamic>> GetTransaccionesByCuentaIdAsync(int cuentaId, int clienteId);
     }
 }

@@ -145,5 +145,48 @@ namespace ArtemisBankingPro.Presentation.WebApp.Controllers
             ViewBag.Cuentas = await _cuentaAhorroService.GetActiveCuentasByClientIdAsync(clienteId);
             return View("Transferencia", vm);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> DetallesCuenta(int id)
+        {
+            int clienteId = GetCurrentUserId();
+            var transacciones = await _cuentaAhorroService.GetTransaccionesByCuentaIdAsync(id, clienteId);
+            
+            if (transacciones == null)
+            {
+                return NotFound();
+            }
+
+            return View(transacciones);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DetallesPrestamo(int id)
+        {
+            int clienteId = GetCurrentUserId();
+            var amortizacion = await _prestamoService.GetTablaAmortizacionByPrestamoIdAsync(id, clienteId);
+            
+            if (amortizacion == null)
+            {
+                return NotFound();
+            }
+
+            return View(amortizacion);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DetallesTarjeta(int id)
+        {
+            int clienteId = GetCurrentUserId();
+            var consumos = await _tarjetaCreditoService.GetConsumosByTarjetaIdAsync(id, clienteId);
+            
+            if (consumos == null)
+            {
+                return NotFound();
+            }
+
+            return View(consumos);
+        }
+
     }
 }
