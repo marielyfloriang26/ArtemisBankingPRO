@@ -5,6 +5,7 @@ using System;
 using System.Security.Claims;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using ArtemisBankingPro.Presentation.WebApi.DTOs;
 
 namespace ArtemisBankingPro.Presentation.WebApi.Controllers;
 
@@ -62,8 +63,8 @@ public class TarjetaCreditoController : ControllerBase
 
             return BadRequest(new { message });
         }
-
-        return CreatedAtAction(nameof(GetById), new { id = ((dynamic)data!).id }, data);
+    return StatusCode(StatusCodes.Status201Created, data);
+     //   return CreatedAtAction(nameof(GetById), new { id = data.Id }, data);//{ id = ((dynamic)data!).id }, data);
     }
 
     // GET /api/credit-card/{id}
@@ -81,7 +82,10 @@ public class TarjetaCreditoController : ControllerBase
 
     // PATCH /api/credit-card/{id}/limit
     [HttpPatch("{id}/limit")]
-    public async Task<IActionResult> UpdateLimit(string id, [FromBody] UpdateLimitRequest request)
+[ProducesResponseType(StatusCodes.Status204NoContent)]
+[ProducesResponseType(StatusCodes.Status400BadRequest)]
+[ProducesResponseType(StatusCodes.Status404NotFound)]
+public async Task<IActionResult> UpdateLimit(string id, [FromBody] UpdateCreditLimitRequest request)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -102,7 +106,10 @@ public class TarjetaCreditoController : ControllerBase
 
     // PATCH /api/credit-card/{id}/cancel
     [HttpPatch("{id}/cancel")]
-    public async Task<IActionResult> Cancel(string id)
+[ProducesResponseType(StatusCodes.Status204NoContent)]
+[ProducesResponseType(StatusCodes.Status400BadRequest)]
+[ProducesResponseType(StatusCodes.Status404NotFound)]
+public async Task<IActionResult> Cancel(string id)
     {
         var (success, message) = await _tarjetaCreditoService
             .CancelCreditCardAsync(id);
@@ -117,20 +124,5 @@ public class TarjetaCreditoController : ControllerBase
 
         return NoContent();
     }
-}
-
-
-public class AssignCreditCardRequest
-{
-    [JsonPropertyName("clientId")]
-    public string ClientId { get; set; } = string.Empty;
-
-    [JsonPropertyName("creditLimit")]
-    public decimal CreditLimit { get; set; }
-}
-
-public class UpdateLimitRequest
-{
-    [JsonPropertyName("creditLimit")]
-    public decimal CreditLimit { get; set; }
+    
 }

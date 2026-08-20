@@ -17,6 +17,7 @@ builder.Services.AddSharedInfrastructure(builder.Configuration);
 
 builder.Services.AddScoped<IAdminService, AdminService>();
 
+
 builder.Services.AddIdentity<Usuario, IdentityRole<int>>(options =>
     {
         options.SignIn.RequireConfirmedAccount = false;

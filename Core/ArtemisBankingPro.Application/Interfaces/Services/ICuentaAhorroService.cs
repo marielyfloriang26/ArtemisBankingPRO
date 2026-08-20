@@ -17,11 +17,9 @@ namespace ArtemisBankingPro.Application.Interfaces.Services
 
 
         // api
-        Task<(List<CuentaAhorro> Cuentas, int TotalRegistros)> GetAllPaginatedAsync(int page, int pageSize, string? identification, string status, string type);
-
-        Task<(bool Success, string ErrorMessage, CuentaAhorro? CuentaCreada)> CreateSecondaryAccountAsync(int clienteId, decimal balanceInicial, int adminId);
-
-        Task<(CuentaAhorro? Cuenta, List<Transaccion> Transacciones, int TotalRegistros)> GetTransaccionesByAccountAsync(string numeroCuenta, int page, int pageSize);
+        Task<(List<(CuentaAhorro Cuenta, Usuario? Cliente)> Cuentas, int TotalRegistros)> GetAllPaginatedAsync(int page, int pageSize, string? identification, string status, string type);
+        Task<(bool Success, string ErrorMessage, CuentaAhorro? CuentaCreada, Usuario? Cliente)> CreateSecondaryAccountAsync(int clienteId, decimal balanceInicial, int adminId);
+        Task<(CuentaAhorro? Cuenta, Usuario? Cliente, List<Transaccion> Transacciones, int TotalRegistros)> GetTransaccionesByAccountAsync(string numeroCuenta, int page, int pageSize);
 
         Task<(bool Success, string ErrorMessage)> CancelSecondaryAccountAsync(string numeroCuenta, int adminId);
 

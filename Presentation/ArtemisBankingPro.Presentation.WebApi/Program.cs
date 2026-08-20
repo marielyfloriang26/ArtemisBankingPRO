@@ -10,6 +10,7 @@ using ArtemisBankingPro.Application;
 using ArtemisBankingPro.Infrastructure.Shared;
 using ArtemisBankingPro.Presentation.WebApi.DTOs;
 using Microsoft.AspNetCore.Mvc;
+using ArtemisBankingPro.Application.Interfaces.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,6 +36,9 @@ builder.Services.AddAuthentication(options => {
         ValidateIssuer = false,
         ValidateAudience = false,
         ValidateLifetime = true
+
+      /*  RoleClaimType = "role", 
+            NameClaimType = "nameid"*/
     };
 
     // Personalización para asegurar códigos y respuestas JSON exactas en fallos de autenticación/autorización

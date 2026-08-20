@@ -14,6 +14,7 @@ namespace ArtemisBankingPro.Application.Services
     {
         private readonly IGenericRepository<CuentaAhorro> _cuentaRepository;
         private readonly IGenericRepository<Transaccion> _transaccionRepository;
+        private readonly IGenericRepository<Prestamo> _prestamoRepository;
         private readonly IMapper _mapper;
         private readonly IUsuarioRepository _usuarioRepo;
         private readonly IEmailService _emailService;
@@ -21,12 +22,14 @@ namespace ArtemisBankingPro.Application.Services
         public CuentaAhorroService(
             IGenericRepository<CuentaAhorro> cuentaRepository,
             IGenericRepository<Transaccion> transaccionRepository,
+            IGenericRepository<Prestamo> prestamoRepository, 
             IMapper mapper,
             ILogger<CuentaAhorroService> logger, IUsuarioRepository usuarioRepo,
             IEmailService emailService)
         {
             _cuentaRepository = cuentaRepository;
             _transaccionRepository = transaccionRepository;
+            _prestamoRepository = prestamoRepository;
             _mapper = mapper;
             _logger = logger;
             _usuarioRepo = usuarioRepo;
@@ -198,41 +201,61 @@ namespace ArtemisBankingPro.Application.Services
         return (false, "Error al procesar el retiro.");
     }
 }
-// main
-    public async Task<(List<CuentaAhorro> Cuentas, int TotalRegistros)> GetAllPaginatedAsync(
+// 
+    public async Task<(List<(CuentaAhorro Cuenta, Usuario? Cliente)> Cuentas, int TotalRegistros)> GetAllPaginatedAsync(
     int page, int pageSize, string? identification, string status, string type)
 {
     var todasLasCuentas = await _cuentaRepository.GetAllAsync();
-    var query = todasLasCuentas.AsQueryable();
+    var clientes = await _usuarioRepo.GetAllClientesAsync();
 
-    // Filtrar por cédula del cliente
+    var join = from c in todasLasCuentas
+               join cl in clientes on c.ClienteId equals cl.Id into clienteGroup
+               from cl in clienteGroup.DefaultIfEmpty()
+               select new { Cuenta = c, Cliente = cl };
+
+    if (type != "todas")
+        join = join.Where(x => x.Cuenta.TipoCuenta.ToLower() == type.ToLower());
+
     if (!string.IsNullOrWhiteSpace(identification))
     {
-        query = query.Where(c => c.Cliente != null && c.Cliente.Cedula == identification);
+        string cedulaLimpia = identification.Replace("-", "").Trim();
+        join = join.Where(x => x.Cliente != null && x.Cliente.Cedula.Replace("-", "") == cedulaLimpia);
+
+        if (status == "cancelada")
+            join = join.Where(x => x.Cuenta.Estado == "Cancelada");
+        else if (status == "activa")
+            join = join.Where(x => x.Cuenta.Estado == "Activa");
+        // si status == "todas", no filtra por estado
+
+        join = join.OrderByDescending(x => x.Cuenta.Estado == "Activa")
+                    .ThenByDescending(x => x.Cuenta.FechaCreacion);
+    }
+    else
+    {
+        if (status == "activa") join = join.Where(x => x.Cuenta.Estado == "Activa");
+        else if (status == "cancelada") join = join.Where(x => x.Cuenta.Estado == "Cancelada");
+
+        join = join.OrderByDescending(x => x.Cuenta.FechaCreacion);
     }
 
-    // Filtrar por estado
-    if (status != "todas")
-        query = query.Where(c => c.Estado.ToLower() == status.ToLower());
+    var lista = join.Select(x => (x.Cuenta, x.Cliente)).ToList();
 
-    // Filtrar por tipo de cuenta
-    if (type != "todas")
-        query = query.Where(c => c.TipoCuenta.ToLower() == type.ToLower());
-
-    // Ordenar de mas reciente a mas antigua
-    var ordenadas = query.OrderByDescending(c => c.FechaCreacion).ToList();
-
-    int totalRegistros = ordenadas.Count;
-    var paginadas = ordenadas.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-
+    int totalRegistros = lista.Count;
+    var paginadas = lista.Skip((page - 1) * pageSize).Take(pageSize).ToList();
     return (paginadas, totalRegistros);
 }
 
-public async Task<(bool Success, string ErrorMessage, CuentaAhorro? CuentaCreada)> CreateSecondaryAccountAsync(
+public async Task<(bool Success, string ErrorMessage, CuentaAhorro? CuentaCreada, Usuario? Cliente)> CreateSecondaryAccountAsync(
     int clienteId, decimal balanceInicial, int adminId)
 {
     if (balanceInicial < 0)
-        return (false, "El balance inicial no puede ser negativo.", null);
+        return (false, "El balance inicial no puede ser negativo.", null, null);
+    
+    var cliente = await _usuarioRepo.GetByIdAsync(clienteId);
+    if (cliente == null)
+        return (false, "El cliente no existe.", null, null);
+    if (!cliente.EsActivo)
+        return (false, "El cliente está inactivo.", null, null);
 
     var todasLasCuentas = await _cuentaRepository.GetAllAsync();
 
@@ -241,7 +264,9 @@ public async Task<(bool Success, string ErrorMessage, CuentaAhorro? CuentaCreada
         .FirstOrDefault(c => c.ClienteId == clienteId && c.TipoCuenta == "Principal" && c.Estado == "Activa");
 
     if (cuentaPrincipal == null)
-        return (false, "El cliente no tiene una cuenta principal activa.", null);
+        return (false, "El cliente no tiene una cuenta principal activa.", null, null);
+
+    var todosLosPrestamos = await _prestamoRepository.GetAllAsync(); 
 
     // Generar num de cuenta unico de 9 dígitos
     var rng = new Random();
@@ -252,9 +277,9 @@ public async Task<(bool Success, string ErrorMessage, CuentaAhorro? CuentaCreada
         numeroCuenta = rng.Next(100000000, 999999999).ToString();
         intentos++;
         if (intentos > 20)
-            return (false, "No fue posible generar un número de cuenta único.", null);
+            return (false, "No fue posible generar un número de cuenta único.", null, null);
     }
-    while (todasLasCuentas.Any(c => c.NumeroCuenta == numeroCuenta));
+    while (todasLasCuentas.Any(c => c.NumeroCuenta == numeroCuenta)|| todosLosPrestamos.Any(p => p.NumeroPrestamo == numeroCuenta));
 
     var nuevaCuenta = new CuentaAhorro
     {
@@ -285,17 +310,19 @@ public async Task<(bool Success, string ErrorMessage, CuentaAhorro? CuentaCreada
         await _transaccionRepository.AddAsync(transaccion);
     }
 
-    return (true, string.Empty, nuevaCuenta);
+    return (true, string.Empty, nuevaCuenta, cliente);
 }
 
-public async Task<(CuentaAhorro? Cuenta, List<Transaccion> Transacciones, int TotalRegistros)> GetTransaccionesByAccountAsync(
+public async Task<(CuentaAhorro? Cuenta, Usuario? Cliente, List<Transaccion> Transacciones, int TotalRegistros)> GetTransaccionesByAccountAsync(
     string numeroCuenta, int page, int pageSize)
 {
     var todasLasCuentas = await _cuentaRepository.GetAllAsync();
     var cuenta = todasLasCuentas.FirstOrDefault(c => c.NumeroCuenta == numeroCuenta);
 
     if (cuenta == null)
-        return (null, new List<Transaccion>(), 0);
+        return (null, null, new List<Transaccion>(), 0);
+
+    var cliente = await _usuarioRepo.GetByIdAsync(cuenta.ClienteId);
 
     var todasLasTransacciones = await _transaccionRepository.GetAllAsync();
 
@@ -307,7 +334,7 @@ public async Task<(CuentaAhorro? Cuenta, List<Transaccion> Transacciones, int To
     int totalRegistros = transacciones.Count;
     var paginadas = transacciones.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
-    return (cuenta, paginadas, totalRegistros);
+    return (cuenta, cliente, paginadas, totalRegistros);
 }
 
 public async Task<(bool Success, string ErrorMessage)> CancelSecondaryAccountAsync(

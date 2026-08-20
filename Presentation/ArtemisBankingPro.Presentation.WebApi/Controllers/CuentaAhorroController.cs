@@ -43,19 +43,19 @@ public class CuentaAhorroController : ControllerBase
         if (!valoresType.Contains(type.ToLower()))
             return BadRequest(new { message = "El parámetro type solo puede ser: principal, secundaria o todas." });
 
-        var (cuentas, total) = await _cuentaAhorroService.GetAllPaginatedAsync(page, pageSize, identification, status, type);
+                var (cuentas, total) = await _cuentaAhorroService.GetAllPaginatedAsync(page, pageSize, identification, status, type);
 
-        var data = cuentas.Select(c => new SavingsAccountResponse
+        var data = cuentas.Select(x => new SavingsAccountResponse
         {
-            Id = c.Id.ToString(),
-            AccountNumber = c.NumeroCuenta,
-            ClientId = c.ClienteId.ToString(),
-            ClientFullName = c.Cliente != null ? $"{c.Cliente.Nombre} {c.Cliente.Apellido}" : "N/A",
-            Identification = c.Cliente?.Cedula ?? "N/A",
-            Balance = c.Balance,
-            Type = c.TipoCuenta,
-            Status = c.Estado,
-            CreatedAt = c.FechaCreacion
+            Id = x.Cuenta.Id.ToString(),
+            AccountNumber = x.Cuenta.NumeroCuenta,
+            ClientId = x.Cuenta.ClienteId.ToString(),
+            ClientFullName = x.Cliente != null ? $"{x.Cliente.Nombre} {x.Cliente.Apellido}" : "N/A",
+            Identification = x.Cliente?.Cedula ?? "N/A",
+            Balance = x.Cuenta.Balance,
+            Type = x.Cuenta.TipoCuenta,
+            Status = x.Cuenta.Estado,
+            CreatedAt = x.Cuenta.FechaCreacion
         }).ToList();
 
         var respuesta = new PaginatedResponse<SavingsAccountResponse>
@@ -82,7 +82,7 @@ public class CuentaAhorroController : ControllerBase
 
         var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
 
-        var (success, errorMessage, cuentaCreada) = await _cuentaAhorroService
+                var (success, errorMessage, cuentaCreada, clienteCreada) = await _cuentaAhorroService
             .CreateSecondaryAccountAsync(clienteId, request.InitialBalance, adminId);
 
         if (!success)
@@ -99,7 +99,7 @@ public class CuentaAhorroController : ControllerBase
             Id = cuentaCreada!.Id.ToString(),
             AccountNumber = cuentaCreada.NumeroCuenta,
             ClientId = cuentaCreada.ClienteId.ToString(),
-            ClientFullName = cuentaCreada.Cliente != null ? $"{cuentaCreada.Cliente.Nombre} {cuentaCreada.Cliente.Apellido}" : "N/A",
+            ClientFullName = clienteCreada != null ? $"{clienteCreada.Nombre} {clienteCreada.Apellido}" : "N/A",
             Balance = cuentaCreada.Balance,
             Type = cuentaCreada.TipoCuenta,
             Status = cuentaCreada.Estado,
@@ -119,7 +119,7 @@ public class CuentaAhorroController : ControllerBase
         if (page <= 0 || pageSize <= 0 || pageSize > 20)
             return BadRequest(new { message = "Los parámetros de paginación son inválidos. pageSize máximo es 20." });
 
-        var (cuenta, transacciones, total) = await _cuentaAhorroService
+                var (cuenta, cliente, transacciones, total) = await _cuentaAhorroService
             .GetTransaccionesByAccountAsync(accountNumber, page, pageSize);
 
         if (cuenta == null)
@@ -139,6 +139,7 @@ public class CuentaAhorroController : ControllerBase
         var respuesta = new
         {
             accountNumber = cuenta.NumeroCuenta,
+            clientFullName = cliente != null ? $"{cliente.Nombre} {cliente.Apellido}" : "N/A",
             balance = cuenta.Balance,
             type = cuenta.TipoCuenta,
             status = cuenta.Estado,
@@ -157,7 +158,10 @@ public class CuentaAhorroController : ControllerBase
 
     // PATCH /api/savings-account/{accountNumber}/cancel
     [HttpPatch("{accountNumber}/cancel")]
-    public async Task<IActionResult> Cancel(string accountNumber)
+[ProducesResponseType(StatusCodes.Status204NoContent)]
+[ProducesResponseType(StatusCodes.Status400BadRequest)]
+[ProducesResponseType(StatusCodes.Status404NotFound)]
+public async Task<IActionResult> Cancel(string accountNumber)
     {
         var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
 

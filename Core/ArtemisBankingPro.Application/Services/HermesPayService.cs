@@ -9,6 +9,8 @@ using ArtemisBankingPro.Application.DTOs;
 using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Domain.Entities;
+using System.Text.RegularExpressions;
+
 
 namespace ArtemisBankingPro.Application.Services;
 
@@ -16,12 +18,14 @@ public class HermesPayService : IHermesPayService
 {
     private readonly IGenericRepository<TarjetaCredito> _tarjetaRepository;
     private readonly IGenericRepository<CuentaAhorro> _cuentaRepository;
+    
     private readonly IGenericRepository<ConsumoTarjeta> _consumoRepository;
     private readonly IGenericRepository<Transaccion> _transaccionRepository;
     private readonly IGenericRepository<Comercio> _comercioRepository;
     private readonly IEmailService _emailService;
     private readonly UserManager<Usuario> _userManager;
     private readonly ILogger<HermesPayService> _logger;
+     private readonly IUnitOfWork _unitOfWork; 
 
     public HermesPayService(
         IGenericRepository<TarjetaCredito> tarjetaRepository,
@@ -31,7 +35,7 @@ public class HermesPayService : IHermesPayService
         IGenericRepository<Comercio> comercioRepository,
         IEmailService emailService,
         UserManager<Usuario> userManager,
-        ILogger<HermesPayService> logger)
+        ILogger<HermesPayService> logger, IUnitOfWork unitOfWork)
     {
         _tarjetaRepository = tarjetaRepository;
         _cuentaRepository = cuentaRepository;
@@ -41,6 +45,7 @@ public class HermesPayService : IHermesPayService
         _emailService = emailService;
         _userManager = userManager;
         _logger = logger;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<(bool Success, string Message, int StatusCode, object? Data)> GetCommerceTransactionsAsync(
@@ -93,17 +98,32 @@ public class HermesPayService : IHermesPayService
     public async Task<(bool Success, string Message, int StatusCode)> ProcessPaymentAsync(
         int routeCommerceId, string userId, string userRole, ProcessPaymentRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.CardNumber) || request.CardNumber.Length != 16)
-            return (false, "El número de tarjeta debe contener exactamente 16 dígitos.", 400);
+        /*if (string.IsNullOrWhiteSpace(request.CardNumber) || !Regex.IsMatch(request.CardNumber, @"^\d{16}$"))
+        return (false, "El número de tarjeta debe contener exactamente 16 dígitos.", 400); */
 
+
+if (string.IsNullOrWhiteSpace(request.CardNumber) || !Regex.IsMatch(request.CardNumber, @"^\d{16}$"))
+    return (false, "El número de tarjeta debe contener exactamente 16 dígitos.", 400);
+
+if (string.IsNullOrWhiteSpace(request.MonthExpirationCard) ||
+    !int.TryParse(request.MonthExpirationCard, out int mes) || mes < 1 || mes > 12)
+    return (false, "El mes de expiración debe tener un valor válido entre 01 y 12.", 400);
+
+if (string.IsNullOrWhiteSpace(request.YearExpirationCard))
+    return (false, "El año de expiración es requerido.", 400);
+
+if (string.IsNullOrWhiteSpace(request.Cvc) || !Regex.IsMatch(request.Cvc, @"^\d{3}$"))
+    return (false, "El CVC debe contener exactamente 3 dígitos.", 400);
+        
+/*
         if (string.IsNullOrWhiteSpace(request.MonthExpirationCard) || string.IsNullOrWhiteSpace(request.YearExpirationCard))
             return (false, "La fecha de expiración es requerida.", 400);
 
         if (string.IsNullOrWhiteSpace(request.Cvc) || request.Cvc.Length != 3)
-            return (false, "El CVC debe contener exactamente 3 dígitos.", 400);
+            return (false, "El CVC debe contener exactamente 3 dígitos.", 400);*/
 
         if (request.TransactionAmount <= 0)
-            return (false, "El monto de la transacción debe ser mayor que cero.", 400);
+            return (false, "El monto de la transacción debe ser mayor que cero.", 400); 
 
         var (comercio, errorMsg, statusCode) = await ResolvingCommerceAsync(routeCommerceId, userId, userRole);
         if (comercio == null)
@@ -126,6 +146,15 @@ public class HermesPayService : IHermesPayService
         string expInput = $"{request.MonthExpirationCard.PadLeft(2, '0')}/{request.YearExpirationCard.Substring(request.YearExpirationCard.Length - 2)}";
         if (tarjeta.FechaExpiracion != expInput)
             return (false, "La fecha de expiración proporcionada no coincide.", 400);
+        
+        // Validar que la tarjeta no este vencida
+        var partes = tarjeta.FechaExpiracion.Split('/'); // "MM/yy"
+        int mesExp = int.Parse(partes[0]);
+        int anioExp = 2000 + int.Parse(partes[1]);
+        var fechaVencimiento = new DateTime(anioExp, mesExp, DateTime.DaysInMonth(anioExp, mesExp));
+
+        if (fechaVencimiento < DateTime.UtcNow.Date)
+            return (false, "La tarjeta se encuentra vencida.", 400);
 
         if (tarjeta.CVC != HashSHA256(request.Cvc))
             return (false, "Los datos de la tarjeta son incorrectos.", 400);
@@ -173,18 +202,29 @@ public class HermesPayService : IHermesPayService
             FechaTransaccion = ahora
         };
 
-        await _tarjetaRepository.UpdateAsync(tarjeta, tarjeta.Id);
-        await _cuentaRepository.UpdateAsync(cuentaComercio, cuentaComercio.Id);
-        await _consumoRepository.AddAsync(consumoAprobado);
-        await _transaccionRepository.AddAsync(transaccionComercio);
-
-        _ = Task.Run(async () => {
+        try
+        {
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                await _tarjetaRepository.UpdateAsync(tarjeta, tarjeta.Id);
+                await _cuentaRepository.UpdateAsync(cuentaComercio, cuentaComercio.Id);
+                await _consumoRepository.AddAsync(consumoAprobado);
+                await _transaccionRepository.AddAsync(transaccionComercio);
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al procesar el pago de Hermes Pay para el comercio {ComercioId}", comercio.Id);
+            return (false, "Ocurrió un error al procesar el pago.", 500);
+        }
+        
             try
             {
                 var clienteTarjeta = await _userManager.FindByIdAsync(tarjeta.ClienteId.ToString());
                 if (clienteTarjeta != null && !string.IsNullOrEmpty(clienteTarjeta.Email))
                 {
                     string asuntoCliente = $"Consumo realizado con la tarjeta {ultimosCuatro}";
+                    
                     string cuerpoCliente = $"Hola {clienteTarjeta.Nombre},\n\nSe ha realizado un consumo con su tarjeta terminada en {ultimosCuatro}.\n\nComercio: {comercio.Nombre}\nMonto: RD${request.TransactionAmount:N2}\nFecha y hora: {ahora:yyyy-MM-dd HH:mm:ss}\n\nSi usted no reconoce esta operación, comuníquese con la entidad bancaria.";
                     await _emailService.SendEmailAsync(clienteTarjeta.Email, asuntoCliente, cuerpoCliente);
                 }
@@ -200,10 +240,10 @@ public class HermesPayService : IHermesPayService
             {
                 _logger.LogError(ex, "Error al enviar las notificaciones de correo para Hermes Pay.");
             }
-        });
-
-        return (true, "Pago procesado correctamente.", 204);
-    }
+            return (true, "Pago procesado correctamente.", 204);
+        }
+  
+    
 
     private async Task<(Comercio? comercio, string error, int statusCode)> ResolvingCommerceAsync(int routeCommerceId, string userId, string userRole)
     {
