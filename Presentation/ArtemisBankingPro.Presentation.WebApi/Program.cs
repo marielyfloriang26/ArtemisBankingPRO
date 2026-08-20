@@ -36,6 +36,26 @@ builder.Services.AddAuthentication(options => {
         ValidateAudience = false,
         ValidateLifetime = true
     };
+
+    // Personalización para asegurar códigos y respuestas JSON exactas en fallos de autenticación/autorización
+    options.Events = new JwtBearerEvents
+    {
+        OnChallenge = context =>
+        {
+            context.HandleResponse();
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            context.Response.ContentType = "application/json";
+            var result = System.Text.Json.JsonSerializer.Serialize(new ErrorResponseDto("No tiene autorización para acceder a este recurso."));
+            return context.Response.WriteAsync(result);
+        },
+        OnForbidden = context =>
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            context.Response.ContentType = "application/json";
+            var result = System.Text.Json.JsonSerializer.Serialize(new ErrorResponseDto("Acceso denegado. No tiene permisos para utilizar este recurso."));
+            return context.Response.WriteAsync(result);
+        }
+    };
 });
 
 builder.Services.AddControllers();
