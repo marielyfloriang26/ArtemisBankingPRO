@@ -31,7 +31,11 @@
                             @foreach (var item in Model)
                             {
                                 <tr>
-                                    <td>@item.FechaTransaccion</td>
+                                    <td>
+                                        <span class="fecha-local" data-utc="@item.FechaTransaccion.ToString("yyyy-MM-ddTHH:mm:ssZ")">
+                                            @item.FechaTransaccion.ToString("g")
+                                        </span>
+                                    </td>
                                     <td>RD$ @item.Monto.ToString("N2")</td>
                                     <td>
                                         <span class="badge @(item.TipoTransaccion == "CRÉDITO" ? "bg-success" : "bg-danger")">
@@ -60,3 +64,24 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll('.fecha-local').forEach(function (el) {
+                const utcDate = el.getAttribute('data-utc');
+                if (utcDate) {
+                    const date = new Date(utcDate);
+                    el.textContent = date.toLocaleString(undefined, {
+                        year: 'numeric',
+                        month: 'numeric',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    });
+                }
+            });
+        });
+    </script>
+}

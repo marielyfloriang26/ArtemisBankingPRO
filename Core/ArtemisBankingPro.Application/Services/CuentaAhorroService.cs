@@ -187,7 +187,7 @@ namespace ArtemisBankingPro.Application.Services
         .OrderByDescending(t => t.FechaTransaccion)
         .Select(t => new TransaccionDetalleViewModel
         {
-            FechaTransaccion = t.FechaTransaccion,
+            FechaTransaccion = TimeZoneInfo.ConvertTimeFromUtc(t.FechaTransaccion, TimeZoneInfo.Local),
             Monto = t.Monto,
             TipoTransaccion = t.TipoTransaccion,
             Beneficiario = t.Beneficiario ?? "N/D",
