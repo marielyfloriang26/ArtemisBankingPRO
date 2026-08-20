@@ -1,4 +1,4 @@
-@model IEnumerable<dynamic>
+@model IEnumerable<ArtemisBankingPro.Application.ViewModels.Cliente.TransaccionDetalleViewModel>
 @{
     ViewData["Title"] = "Detalle de Transacciones";
 }
@@ -32,7 +32,7 @@
                             {
                                 <tr>
                                     <td>@item.FechaTransaccion</td>
-                                    <td>RD$ @((item.Monto ?? 0).ToString("N2"))</td>
+                                    <td>RD$ @item.Monto.ToString("N2")</td>
                                     <td>
                                         <span class="badge @(item.TipoTransaccion == "CRÉDITO" ? "bg-success" : "bg-danger")">
                                             @item.TipoTransaccion

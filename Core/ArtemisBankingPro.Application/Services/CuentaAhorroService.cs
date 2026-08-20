@@ -172,12 +172,32 @@ namespace ArtemisBankingPro.Application.Services
 }
 
 
-    public async Task<List<dynamic>> GetTransaccionesByCuentaIdAsync(int cuentaId, int clienteId)
+    public async Task<List<TransaccionDetalleViewModel>> GetTransaccionesByCuentaIdAsync(int cuentaId, int clienteId)
+{
+    var cuenta = await _cuentaRepository.GetByIdAsync(cuentaId);
+    if (cuenta == null || cuenta.ClienteId != clienteId)
     {
-        // TODO: Implementar la consulta a la base de datos para obtener las transacciones 
-        // de la cuenta asegurándote de que pertenezcan al clienteId.
-        return new List<dynamic>();
+        return null;
     }
+
+    var transacciones = await _transaccionRepository.GetAllAsync();
+    
+    var transaccionesCuenta = transacciones
+        .Where(t => t.CuentaOrigenId == cuentaId || t.CuentaDestinoId == cuentaId)
+        .OrderByDescending(t => t.FechaTransaccion)
+        .Select(t => new TransaccionDetalleViewModel
+        {
+            FechaTransaccion = t.FechaTransaccion,
+            Monto = t.Monto,
+            TipoTransaccion = t.TipoTransaccion,
+            Beneficiario = t.Beneficiario ?? "N/D",
+            Origen = t.Origen ?? "N/D",
+            Estado = t.Estado ?? "APROBADA"
+        })
+        .ToList();
+
+    return transaccionesCuenta;
+}
 
     }
 }

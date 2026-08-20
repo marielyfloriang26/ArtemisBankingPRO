@@ -425,9 +425,32 @@ public class PrestamoService : IPrestamoService
 
 
     public async Task<List<dynamic>> GetTablaAmortizacionByPrestamoIdAsync(int prestamoId, int clienteId)
+{
+    var prestamo = await _prestamoRepo.GetByIdWithIncludesAsync(prestamoId);
+
+    // Valida que el préstamo exista y pertenezca al cliente autenticado
+    if (prestamo == null || prestamo.ClienteId != clienteId)
     {
-        // TODO: Implementar la consulta para obtener la tabla de amortización 
-        // del préstamo validando que pertenezca al clienteId.
-        return new List<dynamic>();
+        return null; // O una lista vacía según maneje tu controlador
     }
+
+    // Mapea las cuotas al formato que espera tu vista de detalles
+    var cuotas = prestamo.Cuotas?
+        .OrderBy(c => c.NumeroCuota)
+        .Select(c => new 
+        {
+            NumeroCuota = c.NumeroCuota,
+            FechaVencimiento = c.FechaVencimiento,
+            ValorCuota = c.ValorCuota,
+            MontoInteres = c.MontoInteres,
+            MontoCapital = c.MontoCapital,
+            SaldoPendiente = c.SaldoPendiente,
+            EstadoPago = c.EstadoPago,
+            TieneAtraso = c.TieneAtraso
+        })
+        .Cast<dynamic>()
+        .ToList();
+
+    return cuotas ?? new List<dynamic>();
+}
 }

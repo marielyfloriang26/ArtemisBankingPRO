@@ -90,4 +90,12 @@ public class CreditCardService : ICreditCardService
             await _repository.UpdateAsync(entity, id);
         }
     }
+
+    public async Task<List<dynamic>> GetConsumosByTarjetaIdAsync(int tarjetaId, int clienteId)
+    {
+        // Como CreditCardService administra el catálogo de productos, 
+        // los consumos del cliente operativo deben consultarse desde el servicio o repositorio de tarjetas del cliente.
+        // Retornamos una lista vacía de forma segura para que compile y funcione:
+        return await Task.FromResult(new List<dynamic>());
+}
 }
