@@ -416,29 +416,30 @@ namespace ArtemisBankingPro.Application.Services
 
         public async Task<List<dynamic>> GetConsumosByTarjetaIdAsync(int tarjetaId, int clienteId)
         {
-            // 1. Validar que la tarjeta pertenezca al cliente y esté activa (o exista)
+            // 1. Validar que la tarjeta pertenezca al cliente
             var tarjetas = await _tarjetaRepository.GetAllAsync();
             var tarjetaValida = tarjetas.Any(t => t.Id == tarjetaId && t.ClienteId == clienteId);
 
             if (!tarjetaValida)
             {
-                return new List<dynamic>(); // O puedes lanzar una excepción según el manejo de errores de tu app
+                return new List<dynamic>();
             }
 
-            // 2. Obtener los consumos asociados a esa tarjeta
+            // 2. Obtener los consumos y proyectarlos con las propiedades exactas que exige la vista
             var consumos = await _consumoRepository.GetAllAsync();
             
             var resultado = consumos
                 .Where(c => c.TarjetaId == tarjetaId)
                 .OrderByDescending(c => c.FechaConsumo)
-                .Select(c => new
+                .Select(c => new 
                 {
                     FechaConsumo = c.FechaConsumo,
-                    MontoConsumido = c.Monto,
-                    Comercio = c.Comercio,
-                    EstadoConsumo = c.Estado
+                    MontoConsumido = c.Monto,          // Coincide con @consumo.MontoConsumido en la vista
+                    Comercio = c.Comercio,             // Coincide con @consumo.Comercio en la vista
+                    EstadoConsumo = c.Estado           // Coincide con @consumo.EstadoConsumo en la vista
                 })
-                .ToList<dynamic>();
+                .Cast<dynamic>()
+                .ToList();
 
             return resultado;
         }
