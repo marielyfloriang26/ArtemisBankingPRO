@@ -2,12 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Security.Cryptography; 
+using System.Text;
 using AutoMapper;
 using Microsoft.Extensions.Logging;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Application.ViewModels.Cliente;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Application.Interfaces.Repositories;
+using Microsoft.AspNetCore.Identity;
 
 namespace ArtemisBankingPro.Application.Services
 {
@@ -20,6 +23,7 @@ namespace ArtemisBankingPro.Application.Services
         private readonly IEmailService _emailService;
         private readonly IMapper _mapper;
         private readonly ILogger<TarjetaCreditoService> _logger;
+        private readonly UserManager<Usuario> _userManager;
 
         public TarjetaCreditoService(
             IGenericRepository<TarjetaCredito> tarjetaRepository,
@@ -28,7 +32,8 @@ namespace ArtemisBankingPro.Application.Services
             IGenericRepository<Transaccion> transaccionRepository,
             IEmailService emailService,
             IMapper mapper,
-            ILogger<TarjetaCreditoService> logger)
+            ILogger<TarjetaCreditoService> logger,
+            UserManager<Usuario> userManager)
         {
             _tarjetaRepository = tarjetaRepository;
             _cuentaRepository = cuentaRepository;
@@ -37,6 +42,7 @@ namespace ArtemisBankingPro.Application.Services
             _emailService = emailService;
             _mapper = mapper;
             _logger = logger;
+            _userManager = userManager;
         }
 
         public async Task<List<TarjetaCreditoViewModel>> GetActiveCardsByClientIdAsync(int clienteId)
@@ -180,5 +186,240 @@ namespace ArtemisBankingPro.Application.Services
         return (false, "Error al procesar el pago.");
     }
 }
+
+    // ==================== MÉTODOS PARA WEB API ====================
+
+        public async Task<(bool Success, string Message, object? Data)> GetCreditCardsPagedAsync(int page, int pageSize, string status, string? identification)
+        {
+            if (page <= 0 || pageSize <= 0 || pageSize > 20)
+                return (false, "Parámetros de paginación inválidos.", null);
+
+            status = status.ToLower();
+            if (status != "activa" && status != "cancelada" && status != "todas")
+                return (false, "Estado no permitido.", null);
+
+            var todas = await _tarjetaRepository.GetAllAsync();
+            IEnumerable<TarjetaCredito> query = todas;
+
+            if (!string.IsNullOrEmpty(identification))
+            {
+                query = query.Where(t => t.Cliente != null && t.Cliente.Cedula == identification);
+                if (status == "todas")
+                {
+                    query = query.OrderByDescending(t => t.Estado == "Activa").ThenByDescending(t => t.FechaCreacion);
+                }
+            }
+            else
+            {
+                if (status == "activa") query = query.Where(t => t.Estado == "Activa");
+                else if (status == "cancelada") query = query.Where(t => t.Estado == "Cancelada");
+
+                query = query.OrderByDescending(t => t.FechaCreacion);
+            }
+
+            int totalRecords = query.Count();
+            int totalPages = (int)Math.Ceiling(totalRecords / (double)pageSize);
+
+            var cards = query.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+            var listData = cards.Select(t => new {
+                id = t.Id.ToString(),
+                maskedCardNumber = $"************{t.NumeroTarjeta.Substring(t.NumeroTarjeta.Length - 4)}",
+                lastFourDigits = t.NumeroTarjeta.Substring(t.NumeroTarjeta.Length - 4),
+                clientId = t.ClienteId.ToString(),
+                clientFullName = t.Cliente != null ? $"{t.Cliente.Nombre} {t.Cliente.Apellido}" : "",
+                creditLimit = t.LimiteCredito,
+                availableCredit = t.LimiteCredito - t.MontoAdeudado,
+                currentDebt = t.MontoAdeudado,
+                expirationDate = t.FechaExpiracion,
+                status = t.Estado,
+                createdAt = t.FechaCreacion.ToString("yyyy-MM-ddTHH:mm:ss")
+            }).ToList();
+
+            var response = new {
+                page = page,
+                pageSize = pageSize,
+                totalRecords = totalRecords,
+                totalPages = totalPages,
+                data = listData
+            };
+
+            return (true, "OK", response);
+        }
+
+        public async Task<(bool Success, string Message, object? Data)> AssignCreditCardAsync(string clientIdStr, decimal creditLimit, int adminUserId)
+        {
+            if (creditLimit <= 0)
+                return (false, "El límite debe ser mayor a cero.", null);
+
+            if (!int.TryParse(clientIdStr, out int clientId))
+                return (false, "Cliente no encontrado.", null);
+
+            var cliente = await _userManager.FindByIdAsync(clientIdStr);
+            if (cliente == null || !cliente.EsActivo)
+                return (false, "El cliente no existe o está inactivo.", null);
+
+            string numeroTarjeta = await GenerarNumeroTarjetaUnicoAsync();
+            string rawCvc = new Random().Next(100, 1000).ToString();
+            string hashedCvc = HashSHA256(rawCvc);
+            string fechaExpiracion = DateTime.UtcNow.AddYears(3).ToString("MM/yy");
+
+            var tarjeta = new TarjetaCredito
+            {
+                NumeroTarjeta = numeroTarjeta,
+                ClienteId = clientId,
+                LimiteCredito = creditLimit,
+                MontoAdeudado = 0.00m,
+                FechaExpiracion = fechaExpiracion,
+                CVC = hashedCvc,
+                Estado = "Activa",
+                AdminId = adminUserId,
+                FechaCreacion = DateTime.UtcNow
+            };
+
+            var guardada = await _tarjetaRepository.AddAsync(tarjeta);
+
+            if (!string.IsNullOrEmpty(cliente.Email))
+            {
+                try
+                {
+                    string ultimos4 = numeroTarjeta.Substring(numeroTarjeta.Length - 4);
+                    await _emailService.SendEmailAsync(cliente.Email, "Asignación de Tarjeta", $"Se te asignó la tarjeta ****{ultimos4} con un límite de RD${creditLimit:N2}");
+                }
+                catch { }
+            }
+
+            string last4 = guardada.NumeroTarjeta.Substring(guardada.NumeroTarjeta.Length - 4);
+            var data = new {
+                id = guardada.Id.ToString(),
+                maskedCardNumber = $"************{last4}",
+                lastFourDigits = last4,
+                clientId = cliente.Id.ToString(),
+                clientFullName = $"{cliente.Nombre} {cliente.Apellido}",
+                creditLimit = guardada.LimiteCredito,
+                availableCredit = guardada.LimiteCredito,
+                currentDebt = 0.00m,
+                expirationDate = guardada.FechaExpiracion,
+                status = guardada.Estado,
+                createdAt = guardada.FechaCreacion.ToString("yyyy-MM-ddTHH:mm:ss")
+            };
+
+            return (true, "Creada", data);
+        }
+
+        public async Task<(bool Success, string Message, object? Data)> GetCreditCardDetailsAsync(string id)
+        {
+            if (!int.TryParse(id, out int cardId)) return (false, "Not Found", null);
+
+            var t = await _tarjetaRepository.GetByIdAsync(cardId);
+            if (t == null) return (false, "Not Found", null);
+
+            var consumos = await _consumoRepository.GetAllAsync();
+            var listConsumos = consumos
+                .Where(c => c.TarjetaId == cardId)
+                .OrderByDescending(c => c.FechaConsumo)
+                .Select(c => new {
+                    id = c.Id.ToString(),
+                    date = c.FechaConsumo.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    amount = c.Monto,
+                    commerceName = c.Comercio,
+                    status = c.Estado
+                }).ToList();
+
+            string last4 = t.NumeroTarjeta.Substring(t.NumeroTarjeta.Length - 4);
+            var data = new {
+                id = t.Id.ToString(),
+                maskedCardNumber = $"************{last4}",
+                lastFourDigits = last4,
+                clientId = t.ClienteId.ToString(),
+                clientFullName = t.Cliente != null ? $"{t.Cliente.Nombre} {t.Cliente.Apellido}" : "",
+                creditLimit = t.LimiteCredito,
+                availableCredit = t.LimiteCredito - t.MontoAdeudado,
+                currentDebt = t.MontoAdeudado,
+                expirationDate = t.FechaExpiracion,
+                status = t.Estado,
+                consumptions = listConsumos
+            };
+
+            return (true, "OK", data);
+        }
+
+        public async Task<(bool Success, string Message)> UpdateCreditLimitAsync(string id, decimal newLimit)
+        {
+            if (newLimit <= 0) return (false, "El límite debe ser mayor a cero.");
+            if (!int.TryParse(id, out int cardId)) return (false, "Not Found");
+
+            var tarjeta = await _tarjetaRepository.GetByIdAsync(cardId);
+            if (tarjeta == null) return (false, "Not Found");
+            if (tarjeta.Estado != "Activa") return (false, "La tarjeta no está activa.");
+            if (newLimit < tarjeta.MontoAdeudado) return (false, "El nuevo límite no puede ser menor a la deuda actual.");
+
+            tarjeta.LimiteCredito = newLimit;
+            await _tarjetaRepository.UpdateAsync(tarjeta, cardId);
+
+            var cliente = await _userManager.FindByIdAsync(tarjeta.ClienteId.ToString());
+            if (cliente != null && !string.IsNullOrEmpty(cliente.Email))
+            {
+                try {
+                    string last4 = tarjeta.NumeroTarjeta.Substring(tarjeta.NumeroTarjeta.Length - 4);
+                    await _emailService.SendEmailAsync(cliente.Email, "Límite Actualizado", $"El nuevo límite de tu tarjeta ****{last4} es RD${newLimit:N2}.");
+                } catch {}
+            }
+
+            return (true, "Actualizado");
+        }
+
+        public async Task<(bool Success, string Message)> CancelCreditCardAsync(string id)
+        {
+            if (!int.TryParse(id, out int cardId)) return (false, "Not Found");
+
+            var tarjeta = await _tarjetaRepository.GetByIdAsync(cardId);
+            if (tarjeta == null) return (false, "Not Found");
+            if (tarjeta.Estado != "Activa") return (false, "La tarjeta ya está cancelada o inactiva.");
+            if (tarjeta.MontoAdeudado > 0) return (false, "Para cancelar esta tarjeta, el cliente debe saldar la totalidad de la deuda pendiente.");
+
+            tarjeta.Estado = "Cancelada";
+            await _tarjetaRepository.UpdateAsync(tarjeta, cardId);
+
+            return (true, "Cancelada");
+        }
+
+        private async Task<string> GenerarNumeroTarjetaUnicoAsync()
+        {
+            var random = new Random();
+            string numero;
+            bool existe;
+
+            do
+            {
+                var sb = new StringBuilder();
+                for (int i = 0; i < 16; i++)
+                {
+                    sb.Append(random.Next(0, 10));
+                }
+                numero = sb.ToString();
+
+                var todas = await _tarjetaRepository.GetAllAsync();
+                existe = todas.Any(t => t.NumeroTarjeta == numero);
+
+            } while (existe);
+
+            return numero;
+        }
+
+        private string HashSHA256(string rawData)
+        {
+            using var sha256Hash = SHA256.Create();
+            byte[] bytes = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(rawData));
+            var builder = new StringBuilder();
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                builder.Append(bytes[i].ToString("x2"));
+            }
+            return builder.ToString();
+        }
+
+    
     }
-}
+}    
+    

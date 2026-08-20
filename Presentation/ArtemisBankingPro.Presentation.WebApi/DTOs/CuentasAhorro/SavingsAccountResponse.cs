@@ -1,6 +1,6 @@
 using System;
 
-namespace ArtemisBankingPro.Application.DTOs;
+namespace ArtemisBankingPro.Presentation.WebApi.DTOs.CuentasAhorro;
 
 public class SavingsAccountResponse
 {

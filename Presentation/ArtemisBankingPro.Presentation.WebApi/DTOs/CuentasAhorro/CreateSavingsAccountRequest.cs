@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace ArtemisBankingPro.Application.DTOs.SavingsAccount;
+namespace ArtemisBankingPro.Presentation.WebApi.DTOs.CuentasAhorro;
 
 public class CreateSavingsAccountRequest
 {

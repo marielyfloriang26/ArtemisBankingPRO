@@ -13,5 +13,12 @@ namespace ArtemisBankingPro.Application.Interfaces.Services
         Task<(bool Success, string ErrorMessage)> RealizarAvanceEfectivoAsync(AvanceEfectivoViewModel model, int clienteId);
 
         Task<(bool Success, string ErrorMessage)> RealizarPagoAsync(ViewModels.Cajero.PagoTarjetaViewModel model, int cajeroId);
+
+        // api 
+        Task<(bool Success, string Message, object? Data)> GetCreditCardsPagedAsync(int page, int pageSize, string status, string? identification);
+        Task<(bool Success, string Message, object? Data)> AssignCreditCardAsync(string clientId, decimal creditLimit, int adminUserId);
+        Task<(bool Success, string Message, object? Data)> GetCreditCardDetailsAsync(string id);
+        Task<(bool Success, string Message)> UpdateCreditLimitAsync(string id, decimal newLimit);
+        Task<(bool Success, string Message)> CancelCreditCardAsync(string id);
     }
 }
