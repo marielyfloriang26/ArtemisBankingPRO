@@ -1,0 +1,54 @@
+@model IEnumerable<dynamic>
+@{
+    ViewData["Title"] = "Consumos de Tarjeta";
+}
+
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fa-solid fa-receipt text-dark me-2"></i> Consumos de la Tarjeta de Crédito</h2>
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="fa-solid fa-arrow-left me-1"></i> Volver atrás
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Fecha del Consumo</th>
+                            <th>Monto Consumido</th>
+                            <th>Comercio / Tipo</th>
+                            <th class="text-center">Estado del Consumo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            @foreach (var consumo in Model)
+                            {
+                                <tr>
+                                    <td>@consumo.FechaConsumo</td>
+                                    <td>RD$ @((consumo.MontoConsumido ?? 0).ToString("N2"))</td>
+                                    <td><strong>@consumo.Comercio</strong></td>
+                                    <td class="text-center">
+                                        <span class="badge @(consumo.EstadoConsumo == "APROBADO" ? "bg-success" : "bg-danger")">
+                                            @consumo.EstadoConsumo
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">No hay consumos registrados para esta tarjeta.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
