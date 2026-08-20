@@ -1,4 +1,4 @@
-@model IEnumerable<dynamic>
+@model IEnumerable<ArtemisBankingPro.Application.ViewModels.AdminTarjeta.ConsumoTarjetaViewModel>
 @{
     ViewData["Title"] = "Consumos de Tarjeta";
 }
@@ -30,7 +30,7 @@
                             {
                                 <tr>
                                     <td>@consumo.FechaConsumo</td>
-                                    <td>RD$ @((consumo.MontoConsumido ?? 0).ToString("N2"))</td>
+                                    <td>RD$ @consumo.MontoConsumido.ToString("N2")</td>
                                     <td><strong>@consumo.Comercio</strong></td>
                                     <td class="text-center">
                                         <span class="badge @(consumo.EstadoConsumo == "APROBADO" ? "bg-success" : "bg-danger")">

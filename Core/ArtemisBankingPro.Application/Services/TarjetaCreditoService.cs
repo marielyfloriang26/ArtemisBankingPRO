@@ -414,7 +414,7 @@ namespace ArtemisBankingPro.Application.Services
             return clientes.Any(c => c.Cedula == cedula);
         }
 
-        public async Task<List<dynamic>> GetConsumosByTarjetaIdAsync(int tarjetaId, int clienteId)
+        public async Task<List<ArtemisBankingPro.Application.ViewModels.AdminTarjeta.ConsumoTarjetaViewModel>> GetConsumosByTarjetaIdAsync(int tarjetaId, int clienteId)
         {
             // 1. Validar que la tarjeta pertenezca al cliente
             var tarjetas = await _tarjetaRepository.GetAllAsync();
@@ -422,26 +422,23 @@ namespace ArtemisBankingPro.Application.Services
 
             if (!tarjetaValida)
             {
-                return new List<dynamic>();
+                return new List<ArtemisBankingPro.Application.ViewModels.AdminTarjeta.ConsumoTarjetaViewModel>();
             }
 
-            // 2. Obtener los consumos y proyectarlos con las propiedades exactas que exige la vista
+            // 2. Obtener los consumos y mapearlos al ViewModel fuerte
             var consumos = await _consumoRepository.GetAllAsync();
             
-            var resultado = consumos
+            return consumos
                 .Where(c => c.TarjetaId == tarjetaId)
                 .OrderByDescending(c => c.FechaConsumo)
-                .Select(c => new 
+                .Select(c => new ArtemisBankingPro.Application.ViewModels.AdminTarjeta.ConsumoTarjetaViewModel
                 {
                     FechaConsumo = c.FechaConsumo,
-                    MontoConsumido = c.Monto,          // Coincide con @consumo.MontoConsumido en la vista
-                    Comercio = c.Comercio,             // Coincide con @consumo.Comercio en la vista
-                    EstadoConsumo = c.Estado           // Coincide con @consumo.EstadoConsumo en la vista
+                    MontoConsumido = c.Monto,
+                    Comercio = c.Comercio,
+                    EstadoConsumo = c.Estado
                 })
-                .Cast<dynamic>()
                 .ToList();
-
-            return resultado;
         }
     }
 }

@@ -24,6 +24,6 @@ namespace ArtemisBankingPro.Application.Interfaces.Services
         Task<string> EditLimiteAsync(ArtemisBankingPro.Application.ViewModels.AdminTarjeta.EditLimiteTarjetaViewModel model);
         Task<string> CancelTarjetaAsync(int id);
         Task<bool> ExisteClienteConCedulaAsync(string cedula);
-        Task<List<dynamic>> GetConsumosByTarjetaIdAsync(int tarjetaId, int clienteId);
+        Task<List<ArtemisBankingPro.Application.ViewModels.AdminTarjeta.ConsumoTarjetaViewModel>> GetConsumosByTarjetaIdAsync(int tarjetaId, int clienteId);
     }
 }
