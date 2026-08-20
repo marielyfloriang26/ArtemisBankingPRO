@@ -40,12 +40,14 @@ public class AccountController : ControllerBase
 
         if (!user.EsActivo)
         {
-            return Unauthorized(new ErrorResponseDto("La cuenta debe ser activada."));
+            return Unauthorized(new ErrorResponseDto("Su cuenta se encuentra inactiva. Debe activar su cuenta antes de iniciar sesión."));
         }
 
-        if (user.TipoUsuario != "Administrador" && user.TipoUsuario != "Comercio")
+        // Validación robusta por roles de Identity
+        var roles = await _userManager.GetRolesAsync(user);
+        if (!roles.Contains("Administrador") && !roles.Contains("Comercio"))
         {
-            return StatusCode(403, new ErrorResponseDto("El usuario no tiene un rol permitido para usar la API."));
+            return StatusCode(403, new ErrorResponseDto("Acceso denegado. No tiene permisos para utilizar este recurso."));
         }
 
         var jwtSettings = _configuration.GetSection("Jwt");
@@ -57,9 +59,13 @@ public class AccountController : ControllerBase
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Name, user.UserName ?? ""),
-            new Claim(ClaimTypes.Email, user.Email ?? ""),
-            new Claim(ClaimTypes.Role, user.TipoUsuario)
+            new Claim(ClaimTypes.Email, user.Email ?? "")
         };
+
+        foreach (var role in roles)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, role));
+        }
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
@@ -83,7 +89,6 @@ public class AccountController : ControllerBase
         if (!ModelState.IsValid || string.IsNullOrWhiteSpace(request.Token))
             return BadRequest(new ErrorResponseDto("Token vacío o inválido."));
 
-        // Como no recibimos userId, buscamos entre los usuarios inactivos
         var inactiveUsers = _userManager.Users.Where(u => !u.EsActivo).ToList();
         Usuario? matchedUser = null;
 
@@ -121,7 +126,8 @@ public class AccountController : ControllerBase
         if (user == null || string.IsNullOrWhiteSpace(user.Email))
             return BadRequest(new ErrorResponseDto("Usuario no existe o no tiene correo registrado."));
 
-        if (user.TipoUsuario != "Administrador" && user.TipoUsuario != "Comercio")
+        var roles = await _userManager.GetRolesAsync(user);
+        if (!roles.Contains("Administrador") && !roles.Contains("Comercio"))
             return BadRequest(new ErrorResponseDto("Usuario no tiene un rol permitido."));
 
         user.EsActivo = false;
