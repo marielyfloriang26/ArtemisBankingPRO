@@ -137,8 +137,8 @@ namespace ArtemisBankingPro.Presentation.WebApp.Controllers
 
             if (result.Success)
             {
-                TempData["SuccessMessage"] = "Transferencia realizada con éxito.";
-                return RedirectToAction("Index");
+                TempData["SuccessMessage"] = string.IsNullOrEmpty(result.ErrorMessage) ? "Transferencia realizada con éxito." : result.ErrorMessage; // mensaje warning si fallo el correo
+                return RedirectToAction("Index"); // redirigir al Home del cliente
             }
 
             ModelState.AddModelError(string.Empty, result.ErrorMessage);

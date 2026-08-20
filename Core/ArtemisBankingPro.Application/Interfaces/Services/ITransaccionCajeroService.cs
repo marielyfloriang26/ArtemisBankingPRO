@@ -16,6 +16,7 @@ public interface ITransaccionCajeroService
 
     Task<(string? error, DepositoViewModel? confirm)> PreviewDepositoAsync(int cajeroId, DepositoViewModel model);
     Task<OperationResultViewModel> EjecutarDepositoAsync(int cajeroId, DepositoViewModel model);
+    Task<(int transaccionesHoy, int pagosHoy, int depositosHoy, int retirosHoy)> GetIndicadoresHomeAsync(int cajeroId);
 
     Task<(string? error, RetiroViewModel? confirm)> PreviewRetiroAsync(int cajeroId, RetiroViewModel model);
     Task<OperationResultViewModel> EjecutarRetiroAsync(int cajeroId, RetiroViewModel model);

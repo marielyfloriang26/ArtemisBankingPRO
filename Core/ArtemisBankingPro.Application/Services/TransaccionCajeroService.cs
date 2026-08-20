@@ -55,7 +55,7 @@ public class TransaccionCajeroService : ITransaccionCajeroService
     private static bool EsNumeroPrestamoValido(string numeroPrestamo) =>
         !string.IsNullOrEmpty(numeroPrestamo) && numeroPrestamo.Length == 9 && numeroPrestamo.All(char.IsDigit);
 
-    private async Task RegistrarTransaccionRechazadaAsync(int cuentaOrigenId, string numeroCuentaOrigen, decimal monto, string beneficiario, int cajeroId)
+    private async Task RegistrarTransaccionRechazadaAsync(int cuentaOrigenId, string numeroCuentaOrigen, decimal monto, string beneficiario, int cajeroId, string tipoOperacion)
     {
         await _transaccionRepo.AddAsync(new Transaccion
         {
@@ -66,7 +66,8 @@ public class TransaccionCajeroService : ITransaccionCajeroService
             Beneficiario = beneficiario,
             Estado = "RECHAZADA",
             UsuarioResponsableId = cajeroId,
-            FechaTransaccion = DateTime.UtcNow
+            FechaTransaccion = DateTime.UtcNow,
+            TipoOperacion = tipoOperacion
         });
     }
 
@@ -96,14 +97,14 @@ public class TransaccionCajeroService : ITransaccionCajeroService
 
         if (!EsNumeroPrestamoValido(numeroPrestamo))
         {
-            await RegistrarTransaccionRechazadaAsync(origen.Id, origen.NumeroCuenta, monto, numeroPrestamo, cajeroId);
+            await RegistrarTransaccionRechazadaAsync(origen.Id, origen.NumeroCuenta, monto, numeroPrestamo, cajeroId, "PAGO_PRESTAMO");
             return ("El número de préstamo ingresado no corresponde a un préstamo válido.", null, null, null, 0m);
         }
 
         var prestamo = await _prestamoRepo.GetByNumeroPrestamoAsync(numeroPrestamo);
         if (prestamo == null || prestamo.Estado != "Activo")
         {
-            await RegistrarTransaccionRechazadaAsync(origen.Id, origen.NumeroCuenta, monto, numeroPrestamo, cajeroId);
+            await RegistrarTransaccionRechazadaAsync(origen.Id, origen.NumeroCuenta, monto, numeroPrestamo, cajeroId, "PAGO_PRESTAMO");
             return ("El número de préstamo ingresado no corresponde a un préstamo válido.", null, null, null, 0m);
         }
 
@@ -112,7 +113,7 @@ public class TransaccionCajeroService : ITransaccionCajeroService
 
         if (!cuotasPendientes.Any())
         {
-            await RegistrarTransaccionRechazadaAsync(origen.Id, origen.NumeroCuenta, monto, prestamo.NumeroPrestamo, cajeroId);
+            await RegistrarTransaccionRechazadaAsync(origen.Id, origen.NumeroCuenta, monto, prestamo.NumeroPrestamo, cajeroId, "PAGO_PRESTAMO");
             return ("El préstamo seleccionado no tiene cuotas pendientes de pago.", null, null, null, 0m);
         }
 
@@ -121,7 +122,7 @@ public class TransaccionCajeroService : ITransaccionCajeroService
 
         if (origen.Balance < montoEfectivo)
         {
-            await RegistrarTransaccionRechazadaAsync(origen.Id, origen.NumeroCuenta, monto, prestamo.NumeroPrestamo, cajeroId);
+            await RegistrarTransaccionRechazadaAsync(origen.Id, origen.NumeroCuenta, monto, prestamo.NumeroPrestamo, cajeroId, "PAGO_PRESTAMO");
             return ("El monto ingresado excede el saldo disponible de la cuenta.", null, null, null, 0m);
         }
 
@@ -181,7 +182,7 @@ public class TransaccionCajeroService : ITransaccionCajeroService
             await _cuotaRepo.UpdateAsync(cuota, cuota.Id);
         }
 
-        // El monto pendiente del préstamo refleja el saldo real (capital + interés) de las cuotas no pagadas.
+        // El monto pendiente del prestamo refleja el saldo real (capital + interes) de las cuotas no pagadas
         prestamo!.MontoPendiente = cuotasPendientes.Sum(c => c.SaldoPendiente);
 
         if (prestamo.MontoPendiente <= 0)
@@ -201,7 +202,8 @@ public class TransaccionCajeroService : ITransaccionCajeroService
             Beneficiario = prestamo.NumeroPrestamo,
             Estado = "APROBADA",
             UsuarioResponsableId = cajeroId,
-            FechaTransaccion = fecha
+            FechaTransaccion = fecha,
+            TipoOperacion = "PAGO_PRESTAMO"
         });
 
         var titularPrestamo = await _usuarioRepo.GetByIdAsync(prestamo.ClienteId);
@@ -239,19 +241,19 @@ public class TransaccionCajeroService : ITransaccionCajeroService
         var destino = await _cuentaRepo.GetByNumeroCuentaAsync(numeroCuentaDestino);
         if (destino == null || destino.Estado != "Activa")
         {
-            await RegistrarTransaccionRechazadaAsync(origen.Id, origen.NumeroCuenta, monto, numeroCuentaDestino, cajeroId);
+            await RegistrarTransaccionRechazadaAsync(origen.Id, origen.NumeroCuenta, monto, numeroCuentaDestino, cajeroId, "TRANSFERENCIA_TERCEROS");
             return ("El número de cuenta destino ingresado no corresponde a una cuenta válida.", null, null);
         }
 
         if (origen.Id == destino.Id)
         {
-            await RegistrarTransaccionRechazadaAsync(origen.Id, origen.NumeroCuenta, monto, destino.NumeroCuenta, cajeroId);
+            await RegistrarTransaccionRechazadaAsync(origen.Id, origen.NumeroCuenta, monto, destino.NumeroCuenta, cajeroId, "TRANSFERENCIA_TERCEROS");
             return ("La cuenta origen y la cuenta destino no pueden ser la misma.", null, null);
         }
 
         if (origen.Balance < monto)
         {
-            await RegistrarTransaccionRechazadaAsync(origen.Id, origen.NumeroCuenta, monto, destino.NumeroCuenta, cajeroId);
+            await RegistrarTransaccionRechazadaAsync(origen.Id, origen.NumeroCuenta, monto, destino.NumeroCuenta, cajeroId, "TRANSFERENCIA_TERCEROS");
             return ("El monto ingresado excede el saldo disponible de la cuenta.", null, null);
         }
 
@@ -302,7 +304,8 @@ public class TransaccionCajeroService : ITransaccionCajeroService
             Beneficiario = destino.NumeroCuenta,
             Estado = "APROBADA",
             UsuarioResponsableId = cajeroId,
-            FechaTransaccion = fecha
+            FechaTransaccion = fecha,
+            TipoOperacion = "TRANSFERENCIA_TERCEROS"
         });
 
         await _transaccionRepo.AddAsync(new Transaccion
@@ -314,7 +317,8 @@ public class TransaccionCajeroService : ITransaccionCajeroService
             Beneficiario = destino.NumeroCuenta,
             Estado = "APROBADA",
             UsuarioResponsableId = cajeroId,
-            FechaTransaccion = fecha
+            FechaTransaccion = fecha,
+            TipoOperacion = "TRANSFERENCIA_TERCEROS"
         });
 
         var titularOrigen = await _usuarioRepo.GetByIdAsync(origen.ClienteId);
@@ -377,7 +381,8 @@ public async Task<OperationResultViewModel> EjecutarDepositoAsync(int cajeroId, 
         Beneficiario = cuenta.NumeroCuenta,
         Estado = "APROBADA",
         UsuarioResponsableId = cajeroId,
-        FechaTransaccion = fecha
+        FechaTransaccion = fecha,
+        TipoOperacion = "DEPOSITO"
     });
 
     var titular = await _usuarioRepo.GetByIdAsync(cuenta.ClienteId);
@@ -405,7 +410,7 @@ private async Task<(string? error, CuentaAhorro? cuenta)> ValidarRetiroAsync(int
 
     if (cuenta.Balance < monto)
     {
-        await RegistrarTransaccionRechazadaAsync(cuenta.Id, cuenta.NumeroCuenta, monto, "RETIRO", cajeroId);
+        await RegistrarTransaccionRechazadaAsync(cuenta.Id, cuenta.NumeroCuenta, monto, "RETIRO", cajeroId, "RETIRO");
         return ("El monto ingresado excede el saldo disponible de la cuenta.", null);
     }
 
@@ -441,7 +446,8 @@ public async Task<OperationResultViewModel> EjecutarRetiroAsync(int cajeroId, Re
         Beneficiario = "RETIRO",
         Estado = "APROBADA",
         UsuarioResponsableId = cajeroId,
-        FechaTransaccion = fecha
+        FechaTransaccion = fecha,
+        TipoOperacion = "RETIRO"
     });
 
     var titular = await _usuarioRepo.GetByIdAsync(cuenta.ClienteId);
@@ -478,7 +484,7 @@ private async Task<(string? error, CuentaAhorro? origen, TarjetaCredito? tarjeta
 
     if (origen.Balance < montoEfectivo)
     {
-        await RegistrarTransaccionRechazadaAsync(origen.Id, origen.NumeroCuenta, monto, UltimosDigitos(tarjeta.NumeroTarjeta), cajeroId);
+        await RegistrarTransaccionRechazadaAsync(origen.Id, origen.NumeroCuenta, monto, UltimosDigitos(tarjeta.NumeroTarjeta), cajeroId, "PAGO_TARJETA");
         return ("El monto ingresado excede el saldo disponible de la cuenta.", null, null, 0m);
     }
 
@@ -523,7 +529,8 @@ public async Task<OperationResultViewModel> EjecutarPagoTarjetaCajeroAsync(int c
         Beneficiario = UltimosDigitos(tarjeta.NumeroTarjeta),
         Estado = "APROBADA",
         UsuarioResponsableId = cajeroId,
-        FechaTransaccion = fecha
+        FechaTransaccion = fecha,
+        TipoOperacion = "PAGO_TARJETA"
     });
 
     var titularTarjeta = await _usuarioRepo.GetByIdAsync(tarjeta.ClienteId);
@@ -549,4 +556,31 @@ public async Task<OperationResultViewModel> EjecutarPagoTarjetaCajeroAsync(int c
 }
 
 #endregion
+
+    #region Indicadores Home
+
+    public async Task<(int transaccionesHoy, int pagosHoy, int depositosHoy, int retirosHoy)> GetIndicadoresHomeAsync(int cajeroId)
+    {
+        var todas = await _transaccionRepo.GetAllAsync();
+        var hoy = DateTime.UtcNow.Date;
+
+        var delCajeroHoy = todas.Where(t =>
+            t.UsuarioResponsableId == cajeroId &&
+            t.Estado == "APROBADA" &&
+            t.FechaTransaccion.Date == hoy).ToList();
+
+        int depositos = delCajeroHoy.Count(t => t.TipoOperacion == "DEPOSITO");
+        int retiros = delCajeroHoy.Count(t => t.TipoOperacion == "RETIRO");
+        int pagosTarjeta = delCajeroHoy.Count(t => t.TipoOperacion == "PAGO_TARJETA");
+        int pagosPrestamo = delCajeroHoy.Count(t => t.TipoOperacion == "PAGO_PRESTAMO");
+        // TransacciOn a terceros genera 2 filas (DEBITO + CREDITO) solo contamos la fila DEBITO como 1 operacion
+        int terceros = delCajeroHoy.Count(t => t.TipoOperacion == "TRANSFERENCIA_TERCEROS" && t.TipoTransaccion == "DÉBITO");
+
+        int pagos = pagosTarjeta + pagosPrestamo;
+        int transacciones = depositos + retiros + pagos + terceros;
+
+        return (transacciones, pagos, depositos, retiros);
+    }
+
+    #endregion
 }

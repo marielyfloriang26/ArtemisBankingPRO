@@ -34,8 +34,15 @@ public class CajeroController : Controller
     #region Home
 
     [HttpGet]
-    public IActionResult Home()
+    public async Task<IActionResult> Home()
     {
+        var (transacciones, pagos, depositos, retiros) = await _transaccionCajeroService.GetIndicadoresHomeAsync(GetCurrentUserId());
+
+        ViewBag.TransaccionesHoy = transacciones;
+        ViewBag.PagosHoy = pagos;
+        ViewBag.DepositosHoy = depositos;
+        ViewBag.RetirosHoy = retiros;
+
         return View();
     }
 
