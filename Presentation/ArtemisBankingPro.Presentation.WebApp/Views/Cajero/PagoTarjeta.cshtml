@@ -22,6 +22,12 @@
                     <form asp-action="PagoTarjeta" method="post">
                         <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
+                         <div class="mb-3">
+                            <label asp-for="NumeroCuenta" class="form-label">Número de Cuenta Origen</label>
+                            <input asp-for="NumeroCuenta" type="text" class="form-control" placeholder="Ej. 123456789" required />
+                            <span asp-validation-for="NumeroCuenta" class="text-danger"></span>
+                        </div>
+
                         <div class="mb-3">
                             <label asp-for="NumeroTarjeta" class="form-label">Número de Tarjeta</label>
                             <input asp-for="NumeroTarjeta" type="text" class="form-control" placeholder="Ej. 1234123412341234" maxlength="16" required />

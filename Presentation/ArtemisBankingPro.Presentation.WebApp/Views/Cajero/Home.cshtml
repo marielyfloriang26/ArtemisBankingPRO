@@ -40,6 +40,24 @@
         <h2>Panel de Cajero</h2>
         <p class="text-muted">Bienvenido, seleccione una operación a realizar</p>
     </div>
+        @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success text-center">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div class="alert alert-warning text-center">
+            @TempData["WarningMessage"]
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger text-center">
+            @TempData["ErrorMessage"]
+        </div>
+    }
 
     <!-- Indicadores del día -->
     <div class="row justify-content-center mb-5 g-3">
@@ -120,7 +138,7 @@
             </a>
         </div>
         <div class="col-md-3 mb-3">
-            <a asp-controller="Cajero" asp-action="TransaccionATerceros" class="btn btn-outline-primary btn-lg w-100 p-4 shadow-sm cajero-card">
+            <a asp-controller="Cajero" asp-action="TransaccionTerceros" class="btn btn-outline-primary btn-lg w-100 p-4 shadow-sm cajero-card">
                 <i class="fs-1 bi bi-arrow-left-right d-block mb-2"></i> Transacción a Terceros
             </a>
         </div>
