@@ -66,7 +66,7 @@ public class TransaccionCajeroService : ITransaccionCajeroService
             Beneficiario = beneficiario,
             Estado = "RECHAZADA",
             UsuarioResponsableId = cajeroId,
-            FechaTransaccion = DateTime.UtcNow,
+            FechaTransaccion = DateTime.Now,
             TipoOperacion = tipoOperacion
         });
     }
@@ -192,7 +192,7 @@ public class TransaccionCajeroService : ITransaccionCajeroService
 
         await _prestamoRepo.UpdateAsync(prestamo, prestamo.Id);
 
-        var fecha = DateTime.UtcNow;
+        var fecha = DateTime.Now;
         await _transaccionRepo.AddAsync(new Transaccion
         {
             CuentaOrigenId = origen.Id,
@@ -293,7 +293,7 @@ public class TransaccionCajeroService : ITransaccionCajeroService
         destino!.Balance += model.Monto;
         await _cuentaRepo.UpdateAsync(destino, destino.Id);
 
-        var fecha = DateTime.UtcNow;
+        var fecha = DateTime.Now;
 
         await _transaccionRepo.AddAsync(new Transaccion
         {
@@ -371,7 +371,7 @@ public async Task<OperationResultViewModel> EjecutarDepositoAsync(int cajeroId, 
     cuenta!.Balance += model.Monto;
     await _cuentaRepo.UpdateAsync(cuenta, cuenta.Id);
 
-    var fecha = DateTime.UtcNow;
+    var fecha = DateTime.Now;
     await _transaccionRepo.AddAsync(new Transaccion
     {
         CuentaDestinoId = cuenta.Id,
@@ -436,7 +436,7 @@ public async Task<OperationResultViewModel> EjecutarRetiroAsync(int cajeroId, Re
     cuenta!.Balance -= model.Monto;
     await _cuentaRepo.UpdateAsync(cuenta, cuenta.Id);
 
-    var fecha = DateTime.UtcNow;
+    var fecha = DateTime.Now;
     await _transaccionRepo.AddAsync(new Transaccion
     {
         CuentaOrigenId = cuenta.Id,
@@ -519,7 +519,7 @@ public async Task<OperationResultViewModel> EjecutarPagoTarjetaCajeroAsync(int c
     if (tarjeta.MontoAdeudado < 0) tarjeta.MontoAdeudado = 0m;
     await _tarjetaRepo.UpdateAsync(tarjeta, tarjeta.Id);
 
-    var fecha = DateTime.UtcNow;
+    var fecha = DateTime.Now;
     await _transaccionRepo.AddAsync(new Transaccion
     {
         CuentaOrigenId = origen.Id,
@@ -562,7 +562,7 @@ public async Task<OperationResultViewModel> EjecutarPagoTarjetaCajeroAsync(int c
     public async Task<(int transaccionesHoy, int pagosHoy, int depositosHoy, int retirosHoy)> GetIndicadoresHomeAsync(int cajeroId)
     {
         var todas = await _transaccionRepo.GetAllAsync();
-        var hoy = DateTime.UtcNow.Date;
+        var hoy = DateTime.Now.Date;
 
         var delCajeroHoy = todas.Where(t =>
             t.UsuarioResponsableId == cajeroId &&

@@ -89,7 +89,7 @@ namespace ArtemisBankingPro.Application.Services
                     Monto = model.Monto,
                     Comercio = "AVANCE",
                     Estado = "RECHAZADO",
-                    FechaConsumo = DateTime.UtcNow
+                    FechaConsumo = DateTime.Now
                 };
                 await _consumoRepository.AddAsync(consumoRechazado);
 

@@ -65,7 +65,7 @@ public class TransaccionClienteService : ITransaccionClienteService
             Beneficiario = beneficiario,
             Estado = "RECHAZADA",
             UsuarioResponsableId = clienteId,
-            FechaTransaccion = DateTime.UtcNow
+            FechaTransaccion = DateTime.Now
         });
     }
 
@@ -144,7 +144,7 @@ public class TransaccionClienteService : ITransaccionClienteService
         destino!.Balance += model.Monto;
         await _cuentaRepo.UpdateAsync(destino, destino.Id);
 
-        var fecha = DateTime.UtcNow;
+        var fecha = DateTime.Now;
 
         await _transaccionRepo.AddAsync(new Transaccion
         {
@@ -264,7 +264,7 @@ public class TransaccionClienteService : ITransaccionClienteService
         if (tarjeta.MontoAdeudado < 0) tarjeta.MontoAdeudado = 0m;
         await _tarjetaRepo.UpdateAsync(tarjeta, tarjeta.Id);
 
-        var fecha = DateTime.UtcNow;
+        var fecha = DateTime.Now;
         await _transaccionRepo.AddAsync(new Transaccion
         {
             CuentaOrigenId = origen.Id,
@@ -406,7 +406,7 @@ public class TransaccionClienteService : ITransaccionClienteService
 
         await _prestamoRepo.UpdateAsync(prestamo, prestamo.Id);
 
-        var fecha = DateTime.UtcNow;
+        var fecha = DateTime.Now;
         await _transaccionRepo.AddAsync(new Transaccion
         {
             CuentaOrigenId = origen.Id,
@@ -506,7 +506,7 @@ public class TransaccionClienteService : ITransaccionClienteService
         cuentaBeneficiario!.Balance += model.Monto;
         await _cuentaRepo.UpdateAsync(cuentaBeneficiario, cuentaBeneficiario.Id);
 
-        var fecha = DateTime.UtcNow;
+        var fecha = DateTime.Now;
 
         await _transaccionRepo.AddAsync(new Transaccion
         {
