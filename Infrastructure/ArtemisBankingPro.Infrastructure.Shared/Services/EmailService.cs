@@ -54,7 +54,7 @@ public class EmailService : IEmailService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al enviar el correo electrónico a {To}", to);
-            throw; // Esto te ayudará a ver si hay algún error de autenticación con Gmail
+            throw; // ver si hay algun error de autenticacion con Gmail
         }
     }
 }
