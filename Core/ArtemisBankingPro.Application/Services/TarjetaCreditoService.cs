@@ -102,7 +102,7 @@ namespace ArtemisBankingPro.Application.Services
                 Monto = montoTotalAdeudar,
                 Comercio = "AVANCE",
                 Estado = "APROBADO",
-                FechaConsumo = DateTime.UtcNow
+                FechaConsumo = DateTime.Now
             };
 
             // Registrar transaccion
@@ -115,7 +115,7 @@ namespace ArtemisBankingPro.Application.Services
                 Beneficiario = $"nº tarjeta {EnmascararTarjeta(tarjeta.NumeroTarjeta)}",
                 Estado = "APROBADA",
                 UsuarioResponsableId = clienteId,
-                FechaTransaccion = DateTime.UtcNow
+                FechaTransaccion = DateTime.Now
             };
 
             try
@@ -184,7 +184,7 @@ namespace ArtemisBankingPro.Application.Services
                 Monto = model.Monto,
                 Comercio = "PAGO_CAJA",
                 Estado = "APROBADO",
-                FechaConsumo = DateTime.UtcNow
+                FechaConsumo = DateTime.Now
             };
 
             var transaccion = new Transaccion
@@ -195,7 +195,7 @@ namespace ArtemisBankingPro.Application.Services
                 Beneficiario = $"nº tarjeta {EnmascararTarjeta(tarjeta.NumeroTarjeta)}",
                 Estado = "APROBADA",
                 UsuarioResponsableId = cajeroId,
-                FechaTransaccion = DateTime.UtcNow
+                FechaTransaccion = DateTime.Now
             };
 
 //
@@ -302,7 +302,7 @@ namespace ArtemisBankingPro.Application.Services
             string numeroTarjeta = await GenerarNumeroTarjetaUnicoAsync();
             string rawCvc = new Random().Next(100, 1000).ToString();
             string hashedCvc = HashSHA256(rawCvc);
-            string fechaExpiracion = DateTime.UtcNow.AddYears(3).ToString("MM/yy");
+            string fechaExpiracion = DateTime.Now.AddYears(3).ToString("MM/yy");
 
             var tarjeta = new TarjetaCredito
             {
@@ -314,7 +314,7 @@ namespace ArtemisBankingPro.Application.Services
                 CVC = hashedCvc,
                 Estado = "Activa",
                 AdminId = adminUserId,
-                FechaCreacion = DateTime.UtcNow
+                FechaCreacion = DateTime.Now
             };
 
             var guardada = await _tarjetaRepository.AddAsync(tarjeta);
@@ -593,11 +593,11 @@ namespace ArtemisBankingPro.Application.Services
                 NumeroTarjeta = numTarjeta,
                 LimiteCredito = model.LimiteCredito,
                 MontoAdeudado = 0,
-                FechaExpiracion = DateTime.UtcNow.AddYears(3).ToString("MM/yy"),
+                FechaExpiracion = DateTime.Now.AddYears(3).ToString("MM/yy"),
                 CVC = cvcHash,
                 AdminId = model.AdminId,
                 Estado = "Activa",
-                FechaCreacion = DateTime.UtcNow
+                FechaCreacion = DateTime.Now
             };
 
             await _tarjetaRepository.AddAsync(tarjeta);

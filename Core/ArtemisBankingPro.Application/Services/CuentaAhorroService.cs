@@ -75,7 +75,7 @@ namespace ArtemisBankingPro.Application.Services
                 Beneficiario = $"nº cuenta destino {cuentaDestino.NumeroCuenta}",
                 Estado = "APROBADA",
                 UsuarioResponsableId = clienteId,
-                FechaTransaccion = DateTime.UtcNow
+                FechaTransaccion = DateTime.Now
             };
             // Crear transaccion credito (Destino)
             var transaccionDestino = new Transaccion
@@ -88,7 +88,7 @@ namespace ArtemisBankingPro.Application.Services
                 Beneficiario = "TRANSFERENCIA",
                 Estado = "APROBADA",
                 UsuarioResponsableId = clienteId,
-                FechaTransaccion = DateTime.UtcNow
+                FechaTransaccion = DateTime.Now
             };
             try
             {
@@ -150,7 +150,7 @@ namespace ArtemisBankingPro.Application.Services
                 Beneficiario = "DEPÓSITO",
                 Estado = "APROBADA",
                 UsuarioResponsableId = cajeroId, // ID del Cajero que hace la operacion
-                FechaTransaccion = DateTime.UtcNow
+                FechaTransaccion = DateTime.Now
             };
 
             try
@@ -187,7 +187,7 @@ namespace ArtemisBankingPro.Application.Services
         Beneficiario = "RETIRO",
         Estado = "APROBADA",
         UsuarioResponsableId = cajeroId,
-        FechaTransaccion = DateTime.UtcNow
+        FechaTransaccion = DateTime.Now
     };
 
     try
@@ -288,7 +288,7 @@ public async Task<(bool Success, string ErrorMessage, CuentaAhorro? CuentaCreada
         Balance = balanceInicial,
         TipoCuenta = "Secundaria",
         Estado = "Activa",
-        FechaCreacion = DateTime.UtcNow
+        FechaCreacion = DateTime.Now
     };
 
     await _cuentaRepository.AddAsync(nuevaCuenta);
@@ -305,7 +305,7 @@ public async Task<(bool Success, string ErrorMessage, CuentaAhorro? CuentaCreada
             Beneficiario = numeroCuenta,
             Estado = "APROBADA",
             UsuarioResponsableId = adminId,
-            FechaTransaccion = DateTime.UtcNow
+            FechaTransaccion = DateTime.Now
         };
         await _transaccionRepository.AddAsync(transaccion);
     }
@@ -372,7 +372,7 @@ public async Task<(bool Success, string ErrorMessage)> CancelSecondaryAccountAsy
             Beneficiario = cuentaPrincipal.NumeroCuenta,
             Estado = "APROBADA",
             UsuarioResponsableId = adminId,
-            FechaTransaccion = DateTime.UtcNow
+            FechaTransaccion = DateTime.Now
         };
 
         // Credito en la cuenta principal
@@ -386,7 +386,7 @@ public async Task<(bool Success, string ErrorMessage)> CancelSecondaryAccountAsy
             Beneficiario = "CANCELACIÓN DE CUENTA",
             Estado = "APROBADA",
             UsuarioResponsableId = adminId,
-            FechaTransaccion = DateTime.UtcNow
+            FechaTransaccion = DateTime.Now
         };
 
         cuentaPrincipal.Balance += montoTransferir;
@@ -420,7 +420,7 @@ public async Task<(bool Success, string ErrorMessage)> CancelSecondaryAccountAsy
         .OrderByDescending(t => t.FechaTransaccion)
         .Select(t => new TransaccionDetalleViewModel
         {
-            FechaTransaccion = DateTime.Now,
+            FechaTransaccion = t.FechaTransaccion,
             Monto = t.Monto,
             TipoTransaccion = t.TipoTransaccion,
             Beneficiario = t.Beneficiario ?? "N/D",
