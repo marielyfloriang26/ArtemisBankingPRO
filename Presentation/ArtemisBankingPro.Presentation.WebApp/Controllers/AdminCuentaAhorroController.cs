@@ -362,7 +362,7 @@ public class AdminCuentaAhorroController : Controller
                 Beneficiario = cuentaPrincipal.NumeroCuenta,
                 Estado = "APROBADA",
                 UsuarioResponsableId = adminId,
-                FechaTransaccion = DateTime.UtcNow
+                FechaTransaccion = DateTime.Now
             };
 
             var credito = new Transaccion
@@ -374,7 +374,7 @@ public class AdminCuentaAhorroController : Controller
                 Beneficiario = cuentaPrincipal.NumeroCuenta,
                 Estado = "APROBADA",
                 UsuarioResponsableId = adminId,
-                FechaTransaccion = DateTime.UtcNow
+                FechaTransaccion = DateTime.Now
             };
 
             _context.Transacciones.Add(debito);
