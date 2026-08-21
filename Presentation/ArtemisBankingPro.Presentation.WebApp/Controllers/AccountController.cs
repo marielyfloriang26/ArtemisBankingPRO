@@ -26,7 +26,7 @@ namespace ArtemisBankingPro.Presentation.WebApp.Controllers
         [HttpGet]
         public IActionResult AccessDenied()
         {
-            // Mensaje requerido estrictamente
+            // Mensaje 
             ViewData["ErrorMessage"] = "No posee permisos para acceder a esta sección.";
             return View();
         }
@@ -148,11 +148,11 @@ namespace ArtemisBankingPro.Presentation.WebApp.Controllers
 
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
             
-            // Construir el enlace absoluto para el restablecimiento
+            //  el enlace para el restablecimiento
             var callbackUrl = Url.Action("NuevaContrasena", "Account", 
                 new { token = token, email = user.Email }, protocol: Request.Scheme);
 
-            // Enviar correo electrónico con el formato requerido
+            // Enviar correo electrónico 
             string asunto = "Restablecimiento de contraseña";
             string cuerpo = $"Hola {user.Nombre},<br><br>" +
                             $"Hemos recibido una solicitud para restablecer la contraseña de su cuenta.<br>" +
@@ -196,7 +196,7 @@ namespace ArtemisBankingPro.Presentation.WebApp.Controllers
             var result = await _userManager.ResetPasswordAsync(user, model.Token, model.Password);
             if (result.Succeeded)
             {
-                // Activar nuevamente la cuenta tras el cambio exitoso
+                // Activar nuevamente la cuenta tras el cambio
                 user.EsActivo = true;
                 await _userManager.UpdateAsync(user);
 

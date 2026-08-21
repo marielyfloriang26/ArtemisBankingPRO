@@ -11,5 +11,5 @@ public class ProductoTarjetaCredito
     public decimal CostoEmision { get; set; } = 0.00m;
     public string? Descripcion { get; set; }
     public string Estado { get; set; } = "Activa"; // Activa o Inactiva
-    public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
+    public DateTime FechaCreacion { get; set; } = DateTime.Now;
 }

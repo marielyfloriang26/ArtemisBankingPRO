@@ -66,7 +66,7 @@ namespace ArtemisBankingPro.Application.Services
                     Beneficiario = model.NumeroCuentaDestino,
                     Estado = "RECHAZADA",
                     UsuarioResponsableId = clienteId,
-                    FechaTransaccion = DateTime.UtcNow
+                    FechaTransaccion = DateTime.Now
                 });
                 return (false, "Balance insuficiente en la cuenta de origen.");
             }
@@ -82,7 +82,7 @@ namespace ArtemisBankingPro.Application.Services
                     Beneficiario = model.NumeroCuentaDestino,
                     Estado = "RECHAZADA",
                     UsuarioResponsableId = clienteId,
-                    FechaTransaccion = DateTime.UtcNow
+                    FechaTransaccion = DateTime.Now
                 });
                 return (false, "La cuenta de destino no existe o no está activa.");
             }
@@ -98,7 +98,7 @@ namespace ArtemisBankingPro.Application.Services
                     Beneficiario = model.NumeroCuentaDestino,
                     Estado = "RECHAZADA",
                     UsuarioResponsableId = clienteId,
-                    FechaTransaccion = DateTime.UtcNow
+                    FechaTransaccion = DateTime.Now
                 });
                 return (false, "No puede transferir a su misma cuenta de origen.");
             }

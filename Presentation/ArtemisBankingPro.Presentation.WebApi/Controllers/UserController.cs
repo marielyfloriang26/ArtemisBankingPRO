@@ -371,7 +371,7 @@ public class UserController : ControllerBase
                         Origen = "DEPÓSITO",
                         Beneficiario = cuentaPrincipal.NumeroCuenta,
                         Estado = "APROBADA",
-                        FechaTransaccion = DateTime.UtcNow
+                        FechaTransaccion = DateTime.Now
                     };
 
                     _context.Set<Transaccion>().Add(transaccion);
@@ -444,7 +444,7 @@ public class UserController : ControllerBase
             role = roles.FirstOrDefault() ?? user.TipoUsuario,
             commerceId = rel?.ComercioId,
             isActive = user.EsActivo,
-            createdAt = DateTime.UtcNow,
+            createdAt = DateTime.Now,
             mainAccount = cuenta != null ? new
             {
                 accountNumber = cuenta.NumeroCuenta,

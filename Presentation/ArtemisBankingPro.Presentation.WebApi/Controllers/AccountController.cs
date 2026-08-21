@@ -43,7 +43,7 @@ public class AccountController : ControllerBase
             return Unauthorized(new ErrorResponseDto("Su cuenta se encuentra inactiva. Debe activar su cuenta antes de iniciar sesión."));
         }
 
-        // Validación robusta por roles de Identity
+        // Validación por roles de Identity
         var roles = await _userManager.GetRolesAsync(user);
         if (!roles.Contains("Administrador") && !roles.Contains("Comercio"))
         {
@@ -70,7 +70,7 @@ public class AccountController : ControllerBase
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddMinutes(Convert.ToDouble(jwtSettings["DurationInMinutes"] ?? "60")),
+            Expires = DateTime.Now.AddMinutes(Convert.ToDouble(jwtSettings["DurationInMinutes"] ?? "60")),
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
         };
 
@@ -136,13 +136,13 @@ public class AccountController : ControllerBase
         var token = await _userManager.GeneratePasswordResetTokenAsync(user);
 
         var emailBody = $@"
-Hola {user.Nombre},
-Se ha generado un token para restablecer la contraseña de su cuenta.
-Token de restablecimiento:
-{token}
-Utilice este token en el endpoint correspondiente para completar el cambio de contraseña.
-Si usted no solicitó este cambio, ignore este mensaje.
-";
+            Hola {user.Nombre},
+            Se ha generado un token para restablecer la contraseña de su cuenta.
+            Token de restablecimiento:
+            {token}
+            Utilice este token en el endpoint correspondiente para completar el cambio de contraseña.
+            Si usted no solicitó este cambio, ignore este mensaje.
+            ";
         await _emailService.SendEmailAsync(user.Email, "Token de restablecimiento de contraseña", emailBody);
 
         return NoContent();

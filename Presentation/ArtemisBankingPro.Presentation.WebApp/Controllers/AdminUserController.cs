@@ -141,7 +141,7 @@ public class AdminUserController : Controller
                 Balance = saldoInicial,
                 TipoCuenta = "Principal",
                 Estado = "Activa",
-                FechaCreacion = DateTime.UtcNow
+                FechaCreacion = DateTime.Now
             };
 
             _context.Add(cuentaPrincipal);
@@ -157,7 +157,7 @@ public class AdminUserController : Controller
                     Origen = "APERTURA",
                     Beneficiario = numeroCuenta,
                     Estado = "APROBADA",
-                    FechaTransaccion = DateTime.UtcNow
+                    FechaTransaccion = DateTime.Now
                 };
                 _context.Add(transaccion);
                 await _context.SaveChangesAsync();
@@ -317,7 +317,7 @@ public class AdminUserController : Controller
                     Origen = "AJUSTE ADMINISTRATIVO",
                     Beneficiario = cuentaPrincipal.NumeroCuenta,
                     Estado = "APROBADA",
-                    FechaTransaccion = DateTime.UtcNow
+                    FechaTransaccion = DateTime.Now
                 };
                 _context.Add(transaccion);
                 await _context.SaveChangesAsync();

@@ -9,7 +9,7 @@ public class Beneficiario
     public int CuentaAhorroId { get; set; }
     public string Nombre { get; set; } = null!;
     public string Apellido { get; set; } = null!;
-    public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
+    public DateTime FechaCreacion { get; set; } = DateTime.Now;
 
     // Propiedades de navegación
     public Usuario? Cliente { get; set; }

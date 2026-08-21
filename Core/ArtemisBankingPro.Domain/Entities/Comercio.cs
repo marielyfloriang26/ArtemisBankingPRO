@@ -12,7 +12,7 @@ public class Comercio
     public string RNC { get; set; } = null!; // Unique
     public bool EsActivo { get; set; } = true;
     public int AdminId { get; set; }
-    public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
+    public DateTime FechaCreacion { get; set; } = DateTime.Now;
 
     // Propiedades de navegación
     public Usuario? Admin { get; set; }

@@ -14,7 +14,7 @@ public class Prestamo
     public decimal MontoPendiente { get; set; }
     public string Estado { get; set; } = "Activo"; // Activo o Completado
     public int AdminId { get; set; }
-    public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
+    public DateTime FechaCreacion { get; set; } = DateTime.Now;
 
     // Propiedades de navegación
     public Usuario? Cliente { get; set; }

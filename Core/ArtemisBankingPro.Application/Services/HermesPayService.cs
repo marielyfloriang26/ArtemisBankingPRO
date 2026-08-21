@@ -153,14 +153,14 @@ if (string.IsNullOrWhiteSpace(request.Cvc) || !Regex.IsMatch(request.Cvc, @"^\d{
         int anioExp = 2000 + int.Parse(partes[1]);
         var fechaVencimiento = new DateTime(anioExp, mesExp, DateTime.DaysInMonth(anioExp, mesExp));
 
-        if (fechaVencimiento < DateTime.UtcNow.Date)
+        if (fechaVencimiento < DateTime.Now.Date)
             return (false, "La tarjeta se encuentra vencida.", 400);
 
         if (tarjeta.CVC != HashSHA256(request.Cvc))
             return (false, "Los datos de la tarjeta son incorrectos.", 400);
 
         decimal creditoDisponible = tarjeta.LimiteCredito - tarjeta.MontoAdeudado;
-        DateTime ahora = DateTime.UtcNow;
+        DateTime ahora = DateTime.Now;
 
         if (request.TransactionAmount > creditoDisponible)
         {

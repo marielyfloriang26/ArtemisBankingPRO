@@ -224,7 +224,7 @@ public class PrestamoService : IPrestamoService
             PlazoMeses = model.PlazoMeses,
             Estado = "Activo",
             AdminId = model.AdminId,
-            FechaCreacion = DateTime.UtcNow
+            FechaCreacion = DateTime.Now
         };
         await _prestamoRepo.AddAsync(prestamo);
 
@@ -258,7 +258,7 @@ public class PrestamoService : IPrestamoService
             {
                 PrestamoId = prestamo.Id,
                 NumeroCuota = i,
-                FechaVencimiento = DateTime.UtcNow.AddMonths(i),
+                FechaVencimiento = DateTime.Now.AddMonths(i),
                 ValorCuota = cuotaMensual,
                 MontoInteres = interes,
                 MontoCapital = capital,
@@ -280,7 +280,7 @@ public class PrestamoService : IPrestamoService
             Beneficiario = cuentaPrincipal.NumeroCuenta,
             Estado = "APROBADA",
             UsuarioResponsableId = model.AdminId,
-            FechaTransaccion = DateTime.UtcNow
+            FechaTransaccion = DateTime.Now
         });
 
         try {
@@ -339,7 +339,7 @@ public class PrestamoService : IPrestamoService
         if (p.Estado != "Activo") return "Solo se puede modificar la tasa de interés de préstamos activos.";
         if (model.NuevaTasaInteresAnual < 0) return "La tasa de interés anual no puede ser negativa.";
 
-        var cuotasFuturas = p.Cuotas?.Where(c => c.FechaVencimiento > DateTime.UtcNow && c.EstadoPago == "Pendiente").OrderBy(c => c.NumeroCuota).ToList();
+        var cuotasFuturas = p.Cuotas?.Where(c => c.FechaVencimiento > DateTime.Now && c.EstadoPago == "Pendiente").OrderBy(c => c.NumeroCuota).ToList();
         if (cuotasFuturas == null || !cuotasFuturas.Any()) return "No existen cuotas futuras pendientes para recalcular.";
 
         p.TasaInteresAnual = model.NuevaTasaInteresAnual;

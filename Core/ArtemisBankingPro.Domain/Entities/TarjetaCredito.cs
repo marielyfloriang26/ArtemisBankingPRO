@@ -14,7 +14,7 @@ public class TarjetaCredito
     public string CVC { get; set; } = null!; // Hash SHA-256
     public string Estado { get; set; } = "Activa"; // Activa o Cancelada
     public int AdminId { get; set; }
-    public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
+    public DateTime FechaCreacion { get; set; } = DateTime.Now;
 
     // Propiedades de navegación
     public Usuario? Cliente { get; set; }

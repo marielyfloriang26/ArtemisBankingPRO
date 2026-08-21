@@ -78,7 +78,7 @@ public class ProcessPaymentCommandHandler : IRequestHandler<ProcessPaymentComman
         var ultimoDiaMes = DateTime.DaysInMonth(anoExpiracion, mesExpiracion);
         var fechaVencimiento = new DateTime(anoExpiracion, mesExpiracion, ultimoDiaMes, 23, 59, 59);
 
-        if (DateTime.UtcNow > fechaVencimiento)
+        if (DateTime.Now > fechaVencimiento)
             throw new Exception("400:La tarjeta está vencida.");
 
         var creditoDisponible = tarjeta.LimiteCredito - tarjeta.MontoAdeudado;
@@ -90,7 +90,7 @@ public class ProcessPaymentCommandHandler : IRequestHandler<ProcessPaymentComman
                 Monto = request.TransactionAmount,
                 Comercio = comercio.Nombre,
                 Estado = "RECHAZADO",
-                FechaConsumo = DateTime.UtcNow
+                FechaConsumo = DateTime.Now
             };
             await _consumoRepository.AddAsync(consumoRechazado);
             throw new Exception("400:El monto de la transacción excede el crédito disponible de la tarjeta.");
@@ -112,7 +112,7 @@ public class ProcessPaymentCommandHandler : IRequestHandler<ProcessPaymentComman
                 Monto = request.TransactionAmount,
                 Comercio = comercio.Nombre,
                 Estado = "APROBADO",
-                FechaConsumo = DateTime.UtcNow
+                FechaConsumo = DateTime.Now
             };
             await _consumoRepository.AddAsync(consumo);
 
@@ -129,7 +129,7 @@ public class ProcessPaymentCommandHandler : IRequestHandler<ProcessPaymentComman
                 Origen = ultimos4,
                 Beneficiario = cuentaComercio.NumeroCuenta,
                 Estado = "APROBADA",
-                FechaTransaccion = DateTime.UtcNow,
+                FechaTransaccion = DateTime.Now,
                 UsuarioResponsableId = comercio.ComercioUsuarioRel.UsuarioId
             };
             await _transaccionRepository.AddAsync(transaccion);
@@ -143,11 +143,11 @@ public class ProcessPaymentCommandHandler : IRequestHandler<ProcessPaymentComman
                 if (tarjeta.Cliente != null)
                 {
                     await _emailService.SendEmailAsync(tarjeta.Cliente.Email!, $"Consumo realizado con la tarjeta {ultimos4}", 
-                        $"Hola {tarjeta.Cliente.Nombre},\n\nSe ha realizado un consumo con su tarjeta terminada en {ultimos4}.\nComercio: {comercio.Nombre}\nMonto: RD${request.TransactionAmount}\nFecha y hora: {DateTime.UtcNow}\n\nSi usted no reconoce esta operación, comuníquese con la entidad bancaria.");
+                        $"Hola {tarjeta.Cliente.Nombre},\n\nSe ha realizado un consumo con su tarjeta terminada en {ultimos4}.\nComercio: {comercio.Nombre}\nMonto: RD${request.TransactionAmount}\nFecha y hora: {DateTime.Now}\n\nSi usted no reconoce esta operación, comuníquese con la entidad bancaria.");
                 }
 
                 await _emailService.SendEmailAsync(comercio.Correo, $"Pago recibido a través de tarjeta {ultimos4}", 
-                    $"Hola {comercio.Nombre},\n\nHa recibido un nuevo pago mediante Hermes Pay.\nTarjeta terminada en: {ultimos4}\nMonto recibido: RD${request.TransactionAmount}\nFecha y hora: {DateTime.UtcNow}\n\nEste mensaje sirve como constancia del pago recibido.");
+                    $"Hola {comercio.Nombre},\n\nHa recibido un nuevo pago mediante Hermes Pay.\nTarjeta terminada en: {ultimos4}\nMonto recibido: RD${request.TransactionAmount}\nFecha y hora: {DateTime.Now}\n\nEste mensaje sirve como constancia del pago recibido.");
             }
             catch (Exception ex)
             {

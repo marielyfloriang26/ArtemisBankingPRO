@@ -34,7 +34,7 @@ namespace ArtemisBankingPro.Presentation.WebApp.BackgroundServices
             var cuotaRepo = scope.ServiceProvider.GetRequiredService<ICuotaPrestamoRepository>();
 
             var cuotas = await cuotaRepo.GetAllAsync();
-            var cuotasVencidas = cuotas.Where(c => c.EstadoPago != "Pagada" && c.FechaVencimiento < DateTime.UtcNow.Date && !c.TieneAtraso).ToList();
+            var cuotasVencidas = cuotas.Where(c => c.EstadoPago != "Pagada" && c.FechaVencimiento < DateTime.Now.Date && !c.TieneAtraso).ToList();
 
             foreach (var cuota in cuotasVencidas)
             {

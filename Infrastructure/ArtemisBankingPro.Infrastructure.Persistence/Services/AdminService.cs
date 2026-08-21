@@ -19,9 +19,9 @@ public class AdminService : IAdminService
 
     public async Task<AdminHomeViewModel> GetDashboardIndicatorsAsync()
     {
-        var hoy = DateTime.UtcNow.Date;
+        var hoy = DateTime.Now.Date;
 
-        // 1. Transacciones (Solo las APROBADAS cuentan)
+        // 1. Transacciones 
         var transHistoricas = await _context.Transacciones.Where(t => t.Estado == "APROBADA").ToListAsync();
         
         // 2. Pagos: Filtramos origen que indique pago a préstamo o tarjeta

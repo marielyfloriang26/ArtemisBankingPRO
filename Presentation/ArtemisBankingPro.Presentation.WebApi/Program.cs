@@ -10,6 +10,7 @@ using ArtemisBankingPro.Application;
 using ArtemisBankingPro.Infrastructure.Shared;
 using ArtemisBankingPro.Presentation.WebApi.DTOs;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using ArtemisBankingPro.Application.Interfaces.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,10 +36,9 @@ builder.Services.AddAuthentication(options => {
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"] ?? "EstaEsUnaLlaveMuySecretaDeAlMenos32Caracteres!!!")),
         ValidateIssuer = false,
         ValidateAudience = false,
-        ValidateLifetime = true
+        ValidateLifetime = true,
+        RoleClaimType = ClaimTypes.Role
 
-      /*  RoleClaimType = "role", 
-            NameClaimType = "nameid"*/
     };
 
     // Personalización para asegurar códigos y respuestas JSON exactas en fallos de autenticación/autorización

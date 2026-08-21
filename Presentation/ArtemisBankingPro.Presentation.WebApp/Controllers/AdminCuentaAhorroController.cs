@@ -224,7 +224,7 @@ public class AdminCuentaAhorroController : Controller
             Balance = saldoInicial,
             TipoCuenta = "Secundaria",
             Estado = "Activa",
-            FechaCreacion = DateTime.UtcNow
+            FechaCreacion = DateTime.Now
         };
 
         _context.CuentasAhorro.Add(nuevaCuenta);
@@ -241,7 +241,7 @@ public class AdminCuentaAhorroController : Controller
                 Beneficiario = numeroCuenta,
                 Estado = "APROBADA",
                 UsuarioResponsableId = adminId,
-                FechaTransaccion = DateTime.UtcNow
+                FechaTransaccion = DateTime.Now
             };
             _context.Transacciones.Add(transaccion);
             await _context.SaveChangesAsync();

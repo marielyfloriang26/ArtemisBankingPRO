@@ -11,7 +11,7 @@ public class CuentaAhorro
     public decimal Balance { get; set; } = 0.00m;
     public string TipoCuenta { get; set; } = null!; // Principal o Secundaria
     public string Estado { get; set; } = "Activa"; // Activa o Cancelada
-    public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
+    public DateTime FechaCreacion { get; set; } = DateTime.Now;
 
     // Propiedades de navegación
     public Usuario? Cliente { get; set; }

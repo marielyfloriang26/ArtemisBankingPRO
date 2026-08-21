@@ -14,7 +14,7 @@ public class Transaccion
     public string Estado { get; set; } = "APROBADA"; // APROBADA o RECHAZADA
     public string? TipoOperacion { get; set; } 
     public int? UsuarioResponsableId { get; set; } // Cajero o Cliente autenticado que inició la transacción
-    public DateTime FechaTransaccion { get; set; } = DateTime.UtcNow;
+    public DateTime FechaTransaccion { get; set; } = DateTime.Now;
 
     // Propiedades de navegación
     public CuentaAhorro? CuentaOrigen { get; set; }

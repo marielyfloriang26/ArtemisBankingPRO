@@ -50,7 +50,7 @@ public class DailyQuotaCheckService : BackgroundService
         prestamosActivos = prestamosActivos.Where(p => p.Estado == "Activo").ToList();
 
         int lateQuotasCount = 0;
-        var today = DateTime.UtcNow.Date;
+        var today = DateTime.Now.Date;
 
         foreach (var prestamo in prestamosActivos)
         {

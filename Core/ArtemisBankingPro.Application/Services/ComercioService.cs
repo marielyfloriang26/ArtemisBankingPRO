@@ -85,7 +85,7 @@ public class ComercioService : IComercioService
             EsActivo = true,
             AdminId = model.AdminId,
             // Se guarda sin Kind para que el 201 y las lecturas posteriores serialicen igual.
-            FechaCreacion = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            FechaCreacion = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified)
         };
 
         try
