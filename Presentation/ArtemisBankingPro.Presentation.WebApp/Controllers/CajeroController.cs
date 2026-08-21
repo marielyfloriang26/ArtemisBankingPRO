@@ -65,7 +65,7 @@ public async Task<IActionResult> Deposito(DepositoViewModel vm)
     var (error, confirm) = await _transaccionCajeroService.PreviewDepositoAsync(GetCurrentUserId(), vm);
     if (error != null)
     {
-        TempData["ErrorMessage"] = error;
+        ModelState.AddModelError(string.Empty, error);
         return View(vm);
     }
     return View("DepositoConfirm", confirm);
@@ -95,7 +95,7 @@ public async Task<IActionResult> DepositoConfirm(DepositoViewModel model)
         var (error, confirm) = await _transaccionCajeroService.PreviewRetiroAsync(GetCurrentUserId(), vm);
         if (error != null)
         {
-            TempData["ErrorMessage"] = error;
+            ModelState.AddModelError(string.Empty, error);
             return View(vm);
         }
 
@@ -126,7 +126,7 @@ public async Task<IActionResult> DepositoConfirm(DepositoViewModel model)
         var (error, confirm) = await _transaccionCajeroService.PreviewPagoTarjetaCajeroAsync(GetCurrentUserId(), vm);
         if (error != null)
         {
-            TempData["ErrorMessage"] = error;
+            ModelState.AddModelError(string.Empty, error);
             return View(vm);
         }
 

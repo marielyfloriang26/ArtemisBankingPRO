@@ -83,6 +83,16 @@ namespace ArtemisBankingPro.Application.Services
             decimal montoDisponible = tarjeta.LimiteCredito - tarjeta.MontoAdeudado;
             if (model.Monto > montoDisponible)
             {
+                var consumoRechazado = new ConsumoTarjeta
+                {
+                    TarjetaId = tarjeta.Id,
+                    Monto = model.Monto,
+                    Comercio = "AVANCE",
+                    Estado = "RECHAZADO",
+                    FechaConsumo = DateTime.UtcNow
+                };
+                await _consumoRepository.AddAsync(consumoRechazado);
+
                 return (false, "El monto del avance supera el límite de crédito disponible en la tarjeta.");
             }
 
@@ -136,12 +146,20 @@ namespace ArtemisBankingPro.Application.Services
                 string ultimos4Tarjeta = tarjeta.NumeroTarjeta.Substring(12);
                 string ultimos4Cuenta = cuenta.NumeroCuenta.Substring(cuenta.NumeroCuenta.Length - 4);
 
-                string asunto = $"Avance de efectivo desde la tarjeta {ultimos4Tarjeta}";
-                string cuerpo = $"Hola {cliente!.Nombre},\n\n" + $"Se ha realizado un avance de efectivo desde su tarjeta terminada en {ultimos4Tarjeta}.\n" + $"Monto depositado: RD${model.Monto}\n" +
-                $"Interés aplicado: RD${montoInteres}\n" +
-                $"Total cargado a la tarjeta: RD${montoTotalAdeudar}\n" +
-                $"Cuenta destino terminada en: {ultimos4Cuenta}\n" +
-                $"Fecha y hora: {DateTime.Now}\n\n" + $"Si usted no reconoce esta operación, comuníquese con la entidad bancaria.";
+                                string asunto = $"Avance de efectivo desde la tarjeta {ultimos4Tarjeta}";
+                string cuerpo = $@"
+                    <div style='font-family: Arial, sans-serif; font-size: 15px; color: #222;'>
+                        <p>Hola {cliente!.Nombre},</p>
+                        <p>Se ha realizado un avance de efectivo desde su tarjeta terminada en <strong>{ultimos4Tarjeta}</strong>.</p>
+                        <table style='margin: 16px 0; border-collapse: collapse;'>
+                            <tr><td style='padding: 4px 12px 4px 0; color: #555;'>Monto depositado:</td><td><strong>RD${model.Monto:N2}</strong></td></tr>
+                            <tr><td style='padding: 4px 12px 4px 0; color: #555;'>Interés aplicado:</td><td><strong>RD${montoInteres:N2}</strong></td></tr>
+                            <tr><td style='padding: 4px 12px 4px 0; color: #555;'>Total cargado a la tarjeta:</td><td><strong>RD${montoTotalAdeudar:N2}</strong></td></tr>
+                            <tr><td style='padding: 4px 12px 4px 0; color: #555;'>Cuenta destino terminada en:</td><td><strong>{ultimos4Cuenta}</strong></td></tr>
+                            <tr><td style='padding: 4px 12px 4px 0; color: #555;'>Fecha y hora:</td><td><strong>{DateTime.Now:dd/MM/yyyy hh:mm tt}</strong></td></tr>
+                        </table>
+                        <p style='color: #777; font-size: 13px;'>Si usted no reconoce esta operación, comuníquese con la entidad bancaria.</p>
+                    </div>";
 
                 try
                 {

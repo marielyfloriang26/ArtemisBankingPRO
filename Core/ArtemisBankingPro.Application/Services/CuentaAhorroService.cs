@@ -52,23 +52,64 @@ namespace ArtemisBankingPro.Application.Services
             var cuentaOrigen = cuentas.FirstOrDefault(c => c.Id == model.CuentaOrigenId && c.ClienteId == clienteId && c.Estado == "Activa");
             if (cuentaOrigen == null) 
                 return (false, "La cuenta de origen no es válida.");
-            if (cuentaOrigen.Balance < model.Monto) 
-                return (false, "Balance insuficiente en la cuenta de origen.");
-            // Obtener y validar cuenta destino por su num
+
             var cuentaDestino = cuentas.FirstOrDefault(c => c.NumeroCuenta == model.NumeroCuentaDestino && c.Estado == "Activa");
-            if (cuentaDestino == null) 
+
+            if (cuentaOrigen.Balance < model.Monto)
+            {
+                await _transaccionRepository.AddAsync(new Transaccion
+                {
+                    CuentaOrigenId = cuentaOrigen.Id,
+                    Monto = model.Monto,
+                    TipoTransaccion = "DÉBITO",
+                    Origen = "TRANSFERENCIA",
+                    Beneficiario = model.NumeroCuentaDestino,
+                    Estado = "RECHAZADA",
+                    UsuarioResponsableId = clienteId,
+                    FechaTransaccion = DateTime.UtcNow
+                });
+                return (false, "Balance insuficiente en la cuenta de origen.");
+            }
+
+            if (cuentaDestino == null)
+            {
+                await _transaccionRepository.AddAsync(new Transaccion
+                {
+                    CuentaOrigenId = cuentaOrigen.Id,
+                    Monto = model.Monto,
+                    TipoTransaccion = "DÉBITO",
+                    Origen = "TRANSFERENCIA",
+                    Beneficiario = model.NumeroCuentaDestino,
+                    Estado = "RECHAZADA",
+                    UsuarioResponsableId = clienteId,
+                    FechaTransaccion = DateTime.UtcNow
+                });
                 return (false, "La cuenta de destino no existe o no está activa.");
-                
-            if (cuentaOrigen.Id == cuentaDestino.Id) 
+            }
+
+            if (cuentaOrigen.Id == cuentaDestino.Id)
+            {
+                await _transaccionRepository.AddAsync(new Transaccion
+                {
+                    CuentaOrigenId = cuentaOrigen.Id,
+                    Monto = model.Monto,
+                    TipoTransaccion = "DÉBITO",
+                    Origen = "TRANSFERENCIA",
+                    Beneficiario = model.NumeroCuentaDestino,
+                    Estado = "RECHAZADA",
+                    UsuarioResponsableId = clienteId,
+                    FechaTransaccion = DateTime.UtcNow
+                });
                 return (false, "No puede transferir a su misma cuenta de origen.");
-            // Actualizar balances
+            }
+           
+           // Actualizar balances
             cuentaOrigen.Balance -= model.Monto;
             cuentaDestino.Balance += model.Monto;
             // Crear transaccion debito (Origen)
             var transaccionOrigen = new Transaccion
             {
                 CuentaOrigenId = cuentaOrigen.Id,
-                CuentaDestinoId = cuentaDestino.Id,
                 Monto = model.Monto,
                 TipoTransaccion = "DÉBITO",
                 Origen = "TRANSFERENCIA",
@@ -80,7 +121,6 @@ namespace ArtemisBankingPro.Application.Services
             // Crear transaccion credito (Destino)
             var transaccionDestino = new Transaccion
             {
-                CuentaOrigenId = cuentaOrigen.Id,
                 CuentaDestinoId = cuentaDestino.Id,
                 Monto = model.Monto,
                 TipoTransaccion = "CRÉDITO",
@@ -129,7 +169,7 @@ namespace ArtemisBankingPro.Application.Services
             }
         }
 
-                public async Task<(bool Success, string ErrorMessage)> RealizarDepositoAsync(ViewModels.Cajero.DepositoViewModel model, int cajeroId)
+        public async Task<(bool Success, string ErrorMessage)> RealizarDepositoAsync(ViewModels.Cajero.DepositoViewModel model, int cajeroId)
         {
             var cuentas = await _cuentaRepository.GetAllAsync();
             var cuenta = cuentas.FirstOrDefault(c => c.NumeroCuenta == model.NumeroCuenta && c.Estado == "Activa");
@@ -420,7 +460,7 @@ public async Task<(bool Success, string ErrorMessage)> CancelSecondaryAccountAsy
         .OrderByDescending(t => t.FechaTransaccion)
         .Select(t => new TransaccionDetalleViewModel
         {
-            FechaTransaccion = DateTime.Now,
+            FechaTransaccion = t.FechaTransaccion,
             Monto = t.Monto,
             TipoTransaccion = t.TipoTransaccion,
             Beneficiario = t.Beneficiario ?? "N/D",
