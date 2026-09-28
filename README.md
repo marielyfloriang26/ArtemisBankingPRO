@@ -12,6 +12,7 @@ De igual forma, la aplicación debe permitir que los cajeros realicen operacione
 operativas como depósitos, retiros, pagos a tarjetas de crédito, pagos a préstamos y 
 transacciones a cuentas de terceros, manteniendo el registro correspondiente de 
 cada movimiento realizado. 
+
 Los clientes deben poder consultar sus productos financieros activos, visualizar sus 
 movimientos, gestionar beneficiarios, realizar pagos, transferencias entre cuentas, 
 transacciones a terceros y avances de efectivo desde sus tarjetas de crédito hacia 
